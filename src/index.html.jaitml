@@ -1,0 +1,13 @@
+<?jai include("header.html"); ?>
+<main>
+	<p class="bigger">Hi! My name is Fabian Huber. I am a Game & Graphics Programmer.</p>
+	<p>I specialize in <b>Computer Graphics</b> and <b>low-level</b> systems for video games. I hold a <b>Bachelor’s degree</b> in <b>Games Programming</b> and an <b>Advanced Technician Diploma</b> in Computer Science with a specialization in Application Development.</p>
+	<h2>Featured Projects</h2>
+	<h2>Posts</h2>
+	<ul class="posts">
+	<?jai for posts { ?>
+	<li><?jai echo("%", it); ?></li>
+	<?jai } ?>
+	</ul>
+</main>
+<?jai include("footer.jaitml"); ?>

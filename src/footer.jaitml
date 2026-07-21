@@ -1,0 +1,3 @@
+		<footer>© <?jai echo("%", to_calendar(current_time_consensus()).year); ?> Fabian Huber</footer>
+	</body>
+</html>
