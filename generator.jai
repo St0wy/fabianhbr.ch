@@ -132,6 +132,9 @@ execute_jaitml :: ($path: string, output_dir: string, $extra_code: Code = #code 
 	});
 	test_post := read_entire_file("src/posts/test.md");
 	node := Markdown.parse_blocks(test_post);
+	html := Markdown.emit_html(node);
+	print("HTML:\n%\n", html);
+	write_entire_file("file.html", html);
 	// execute_jaitml("src/rss.xml.jaitml", BUILD_DIR);
 
 	end := current_time_monotonic();
