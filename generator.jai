@@ -5,7 +5,7 @@
 #import "String";
 #import "Program_Print";
 
-#import "Markdown";
+Markdown :: #import "Markdown";
 
 OPEN_TAG :: "<?jai";
 CLOSE_TAG :: "?>";
@@ -123,9 +123,15 @@ execute_jaitml :: ($path: string, output_dir: string, $extra_code: Code = #code 
 		posts: [..] Post;
 
 		visit_files("src/posts", false, *posts, (info: *File_Visit_Info, data: *[..] Post) {
+			if info.is_directory then return;
+			ext, ok := path_extension(info.short_name);
+			if !ok then return;
+			if ext != ".md" then return;
 			array_add(data, {copy_string(info.short_name), "", ""});
 		});
 	});
+	test_post := read_entire_file("src/posts/test.md");
+	node := Markdown.parse_blocks(test_post);
 	// execute_jaitml("src/rss.xml.jaitml", BUILD_DIR);
 
 	end := current_time_monotonic();
