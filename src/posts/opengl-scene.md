@@ -2,13 +2,7 @@
 title: How I implemented a deferred PBR renderer in OpenGL
 slug: how-i-implemented-a-deferred-pbr-renderer-in-opengl
 pubDatetime: 2023-07-18
-featured: true
-draft: false
-tags:
-    - graphics-programming
-    - cpp
-    - english
-    - sae
+tags: graphics-programming, cpp, english, sae
 description: Technical breakdown of my deferred PBR renderer made with OpenGL in C++.
 ---
 
@@ -17,9 +11,7 @@ In this blog post, I will explain some of the technical details behind my implem
 I won't go into too many details about the computer graphics concepts applied here. If that's something of interest to you,
 you can read [LearnOpenGL](https://learnopengl.com/) which is where I learned everything needed to make this scene real!
 
-![Picture of the demo scene of my renderer](/src/assets/images/opengl-scene/chat.jpg)
-
-## Table of Contents
+![Picture of the demo scene of my renderer](/assets/images/opengl-scene/chat.jpg)
 
 ## Assets
 
@@ -154,7 +146,7 @@ As I didn't want to store a vector of children, because it would be on the heap 
 It also keeps all of the data next to each other, and this makes the structure more cache friendly.
 This means that my scene graph looks something like this:
 
-![graph on how the scene graph is layed out](/src/assets/images/opengl-scene/scene-graph.svg)
+![graph on how the scene graph is layed out](/assets/images/opengl-scene/scene-graph.svg)
 
 And what's nice with this code, is that traversing the tree to draw it to the screen is not that
 much more complex than using some good old [DFS](https://en.wikipedia.org/wiki/Depth-first_search).
@@ -430,32 +422,32 @@ The first thing that's done is the geometry pass all of the informations that th
 
 The first attachment has the fragments positions in view-space on the RGB channels and the ambient occlusion factor in the alpha.
 
-![fragPos](/src/assets/images/opengl-scene/fragPos.png)
+![fragPos](/assets/images/opengl-scene/fragPos.png)
 
-![ambientOcclusion](/src/assets/images/opengl-scene/ambientOcclusion.png)
+![ambientOcclusion](/assets/images/opengl-scene/ambientOcclusion.png)
 
 Then in the second attachment, the normals in view-space and the roughness are stored.
 
-![normal](/src/assets/images/opengl-scene/normal.png)
+![normal](/assets/images/opengl-scene/normal.png)
 
-![roughness](/src/assets/images/opengl-scene/roughness.png)
+![roughness](/assets/images/opengl-scene/roughness.png)
 
 And in the third attachment, we have the base color and the metallic.
 
-![baseColor](/src/assets/images/opengl-scene/baseColor.png)
+![baseColor](/assets/images/opengl-scene/baseColor.png)
 
-![metallic](/src/assets/images/opengl-scene/metallic.png)
+![metallic](/assets/images/opengl-scene/metallic.png)
 
 After this pass, we take the fragments in view-space and use them to compute the SSAO.
 A blur effect is then applied to smooth out the noise.
 
-![ssao](/src/assets/images/opengl-scene/ssao.png)
+![ssao](/assets/images/opengl-scene/ssao.png)
 
 Then, the four levels of the cascaded shadow maps are rendered. (I'll only show two of them.)
 
-![lightDepth](/src/assets/images/opengl-scene/lightDepth.png)
+![lightDepth](/assets/images/opengl-scene/lightDepth.png)
 
-![lightDepth2](/src/assets/images/opengl-scene/lightDepth2.png)
+![lightDepth2](/assets/images/opengl-scene/lightDepth2.png)
 
 After this, we can start to render the lights.
 For this, we enable blending and call three pipelines:
@@ -470,28 +462,28 @@ This allows to only update the pixels impacted by the light and saves on perform
 
 The ambient lighting looks like this:
 
-![ambientLighting](/src/assets/images/opengl-scene/ambient.png)
+![ambientLighting](/assets/images/opengl-scene/ambient.png)
 
 Then the point light (yes it's very similar):
 
-![pointLight](/src/assets/images/opengl-scene/pointLight.png)
+![pointLight](/assets/images/opengl-scene/pointLight.png)
 
 And finally the directional light:
 
-![directionalLight](/src/assets/images/opengl-scene/directional.png)
+![directionalLight](/assets/images/opengl-scene/directional.png)
 
 Now that the light computation is done, spheres that are the color of the lights are rendered on top of the attachment and the skybox is drawn.
 
-![skybox](/src/assets/images/opengl-scene/skybox.png)
+![skybox](/assets/images/opengl-scene/skybox.png)
 
 Then bloom is rendered.
 
-![bloom](/src/assets/images/opengl-scene/bloom.png)
+![bloom](/assets/images/opengl-scene/bloom.png)
 
 And now we can mix the bloom with the previous framebuffer and apply some HDR tone mapping and gamma correction.
 (In my case I use Narkowicz ACES).
 
-![final](/src/assets/images/opengl-scene/final.png)
+![final](/assets/images/opengl-scene/final.png)
 
 Et voilà! It took a lot of effort, but we have our final image.
 
@@ -523,12 +515,12 @@ I hope I'll be able to work on these projects and maybe write a blogpost about i
 
 _now some bonus funny visual bugs_
 
-![bob omb](/src/assets/images/opengl-scene/bobomb.jpg)
+![bob omb](/assets/images/opengl-scene/bobomb.jpg)
 
-![cursed](/src/assets/images/opengl-scene/cursed.png)
+![cursed](/assets/images/opengl-scene/cursed.png)
 
-![spike](/src/assets/images/opengl-scene/spike.png)
+![spike](/assets/images/opengl-scene/spike.png)
 
 _and the full IBL developed integral because why not_
 
-![ibl](/src/assets/images/opengl-scene/ibl.png)
+![ibl](/assets/images/opengl-scene/ibl.png)

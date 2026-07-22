@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>An exploration of build systems for C++ projects - Fabian Huber</title>
+		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/">About</a></li>
+				</ul>
+			</nav>
+		</header>
+
+<main>
+	<article>
+		<header>
+			<h1>An exploration of build systems for C++ projects</h1>
+			<p class="date">2023-9-26</p>
+		</header>
+		<h2>Introduction</h2><p>When I first started to learn C++, one of the things I found to be the most confusing was using CMake.
+I learned to program in C# and visual studio really did all of the hard work in term of handling the build so
+I never had to think about it.
+At first this made me hate CMake,
+but since I also wanted to learn how to have a platform independent build system,
+I decided to learn how to properly use CMake.</p><p>But recently, I started to take a look at some game engines tutorials such as
+<a href="https://www.youtube.com/playlist?list=PLv8Ddw9K0JPg1BEO-RS-0MYs423cvLVtj">Kohi</a> by Travis Vroman
+and <a href="https://www.youtube.com/playlist?list=PLnuhp3Xd9PYTt6svyQPyRO_AAuMWGxPzU">Handmade Hero</a> by Casey Muratori
+and one thing really surprised me, they both use Batch / Bash scripts to handle the compilation of the project.
+Since my feelings for CMake where still not very positive, I decided to try using scripts to build a C++ project.</p><h2>The project</h2><p>To have something to build, I decided to use my <a href="https://www.fabianhbr.ch/projects/physics-engine">physics engine</a>
+and build it as a shared library.
+This library is then linked into a test bed executable that uses the library.</p><p><img src="/assets/images/build-systems/project.png" alt="Schema of the project." /></p><p>The folder structure of the project looks something like this :</p><pre><code class="language-plaintext">build_system_tests/
+├── bin/
+│   └── testbed.exe
+├── stowy_physics_engine/
+│   └── build.bat
+├── testbed/
+│   └── build.bat
+└── build_all.bat</code></pre><p>If you don&#39;t care about reading my explanations and just want to read the code,
+you can check it out on <a href="https://github.com/St0wy/build_system_tests">GitHub</a>.</p><h2>Batch</h2><p>So setup with Batch files is very much inspired by the one that is in the Kohi tutorial series.
+I just added the option to be able to call the script with <code>release</code> afterwards to build with optimisations on.</p><p>The first part of the script is about checking if we want to build in release,
+get every <code>.cpp</code> files and setting the compiler flags in variables.
+Then we call clang to build the project.</p><pre><code class="language-dos">@REM Build script for stowy physics engine
+@ECHO OFF
+SetLocal EnableExtensions EnableDelayedExpansion
+
+REM Check if we want to build in release and save it to a variable
+IF &quot;%1&quot; EQU &quot;release&quot; ( SET isRelease=release) else ( SET isRelease=)
+
+REM Get a list of all the .cpp files.
+SET cppFilenames=
+FOR /R %%f in (*.cpp) do (
+    SET cppFilenames=!cppFilenames! %%f
+)
+
+SET assembly=stowy_physics_engine
+
+SET compilerFlags=-std=c++20
+IF DEFINED isRelease (
+    SET compilerFlags=!compilerFlags! -O3
+) else (
+    SET compilerFlags=!compilerFlags! -g3
+)
+
+SET includeFlags=-Isrc
+SET linkerFlags=-shared
+
+SET defines=-DSTWEXPORT
+IF DEFINED isRelease (
+    SET defines=!defines! -DNDEBUG
+) else (
+    SET defines=!defines! -DDEBUG
+)
+
+IF DEFINED isRelease ( ECHO Building %assembly% in release...) else ( ECHO Building %assembly% in debug...)
+clang++ %cppFilenames% %compilerFlags% -o ../bin/%assembly%.dll %defines% %includeFlags% %linkerFlags%</code></pre><p>And with that we can build the library.
+The executable has a pretty similar script, just with different flags to be able to link against the library.</p><p>Then the script to build both is also pretty simple.
+It basically creates the bin directory then call each script in their own directory.</p><pre><code class="language-dos">@ECHO OFF
+REM Build Everything
+
+ECHO Building everything...
+
+if not exist bin mkdir bin
+
+PUSHD stowy_physics_engine
+CALL build.bat %1
+POPD
+IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% &amp;&amp; exit)
+
+PUSHD testbed
+CALL build.bat %1
+POPD
+IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% &amp;&amp; exit)
+
+ECHO All assemblies built successfully.</code></pre><p>And that&#39;s it for Batch. So is it something that I would recommend ?</p><h3>Pros</h3><ul><li><strong>Platform specific</strong> : we don&#39;t have to bother with being able to build on Linux</li><li><strong>Relatively short</strong></li></ul><h3>Cons</h3><ul><li><strong>Platform specific</strong> : we have to rewrite the script in Bash if we want it to work on Linux or MacOS</li><li><strong>Ugly syntax</strong> : I know that this is more of a personal opinion, but I think Batch&#39;s syntax is quite</li></ul><ul><li><strong>Build is not cached</strong> : Every time we build the project, everything is rebuilt from scratch, which takes time.</li></ul><p>So since Powershell is kind of the modern version of Batch,
+I thought that it might have a better syntax than it and so I decided to try it next.</p><h2>Powershell</h2><p>I have to confess something for this chapter.
+I have never actually written a Powershell script in my life, so I thought it could be a good idea to see how
+ChatGPT would translate my Batch script into Powershell.
+And believe it or not, but the script that it gave me worked on the first try !</p><p>So how does it differ ?
+Basically, to find the <code>.cpp</code> files, I was able to use the <code>Get-ChildItem</code> command instead of the weird for loop.
+Then, since Powershell can&#39;t insert variables when calling a command, I had to create a string with the command in it
+and then call it with <code>Inkove-Expression</code>.</p><pre><code class="language-ps1">$isRelease = $false
+
+# Check if we want to build in release and save it to a variable
+if ($args[0] -eq &quot;release&quot;) {
+	$isRelease = $true
+}
+
+# Get a list of all the .cpp files.
+$cppFilenames = Get-ChildItem -Recurse -Filter &quot;*.cpp&quot; | ForEach-Object { $_.FullName }
+
+$assembly = &quot;stowy_physics_engine&quot;
+
+$compilerFlags = &quot;-std=c++20&quot;
+if ($isRelease) {
+	$compilerFlags += &quot; -O3&quot;
+}
+else {
+	$compilerFlags += &quot; -g3&quot;
+}
+
+$includeFlags = &quot;-Isrc&quot;
+$linkerFlags = &quot;-shared&quot;
+
+$defines = &quot;-DSTWEXPORT&quot;
+if ($isRelease) {
+	$defines += &quot; -DNDEBUG&quot;
+}
+else {
+	$defines += &quot; -DDEBUG&quot;
+}
+
+$cppFiles = $cppFilenames -join &quot; &quot;
+$buildCommand = &quot;clang++ $cppFiles $compilerFlags -o ..\bin\$assembly.dll $defines $includeFlags $linkerFlags&quot;
+Invoke-Expression $buildCommand</code></pre><p>As before, for the testbed, it&#39;s just different flags, and I won&#39;t talk about the build</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong> : I think the syntax is way more pleasant and I could see myself writing a bigger script with it</li><li><strong>Platform specific(ish)</strong> : I know that technically Powershell can run on Linux, but I haven&#39;t tried it and it seems too cursed to make me wanna try.</li></ul><h3>Cons</h3><ul><li><strong>Platform specific(ish)</strong></li><li><strong>Build is not cached</strong></li></ul><h2>Nushell (simple)</h2><p><a href="https://www.nushell.sh/">Nushell</a> is a cross-platform shell written in rust.
+Since I wanted to write a script that could work on both Windows and Linux, I thought it could be interesting to try Nushell.</p><p>I actually wrote two versions of the script, one that follows the same structure as the previous ones (simple)
+and one where I defined a custom command to reduce code duplication (improved).</p><p>As you can see below, in Nushell you must have a main function in scripts,
+which is super nice because it allows to have type-safe parameters.
+Another nice thing is that variables are immutable by default and that the syntax is terser than Powershell.</p><pre><code class="language-nushell"># Build script for stowy physics engine
+
+def main [input?: string] {
+	let isRelease = $input == &#39;release&#39;
+
+	let cppFiles = glob **/*.cpp
+
+	const assembly = &#39;stowy_physics_engine&#39;
+
+	let compilerFlags = [ &#39;-std=c++20&#39; (if $isRelease { &#39;-O3&#39; } else { &#39;-g3&#39; })]
+
+	const includeFlags = [&#39;-Isrc&#39;]
+	const linkerFlags = [&#39;-shared&#39;]
+
+	let defines = [&#39;-DSTWEXPORT&#39; (if $isRelease { &#39;-DNDEBUG&#39;} else { &#39;-DDEBUG&#39; })]
+
+	clang++ $cppFiles $compilerFlags -o $&#39;../bin/($assembly).dll&#39; $defines $includeFlags $linkerFlags
+}</code></pre><p>As you can see I haven&#39;t yet made the changes to make the script cross-platform, it&#39;s really a translation of the previous scripts.
+But it already brings improvements both when using the script and when writing it.</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong> : Both the parameters and the variables of the script are type-safe</li><li><strong>Cross-platform(ish)</strong></li></ul><h3>Cons</h3><ul><li><strong>Not yet really cross-platform</strong></li><li><strong>Code duplication</strong> : Both the library and the exe have similar build script</li><li><strong>Build is not cached</strong></li></ul><p>The next version of the script will fix the portability, code duplication and caching problem !</p><h2>Nushell (improved)</h2><p>To fix the code duplication problem, I decided to create a <code>build</code> command that would be located in a <code>common.nu</code> file.
+Then, each project can source this file and call the build command with their own parameters.
+The structure of the project then looks like this :</p><pre><code class="language-plaintext">build_system_tests/
+├── build/
+│   └── testbed.exe
+├── stowy_physics_engine/
+│   └── build-cached.nu
+├── testbed/
+│   └── build-cached.nu
+├── common.nu
+└── build-all-cached.nu</code></pre><p>And the library can source the file like this :</p><pre><code class="language-nushell"># Build script for stowy physics engine
+source ../common.nu
+def main [buildType: string = &#39;debug&#39;] {
+	# ...
+}</code></pre><p>In <code>common.nu</code>, there is a <code>build</code> command that takes the necessary parameters.</p><pre><code class="language-nushell"># Builds the assembly according to the parameters
+def build [
+	assemblyName: string,
+	sourceDirectory: path,
+	binaryDirectory: path,
+	compilerFlags: list&lt;string&gt;,
+	includeFlags: list&lt;string&gt;,
+	linkerFlags: list&lt;string&gt;,
+	defines: list&lt;string&gt;,
+	buildType: string = &#39;debug&#39;, # The optimisation level of the build. Can be &#39;release&#39; or &#39;debug&#39;.
+	targetType: string = &#39;executable&#39;, # The type of target. Can be &#39;executable&#39; or &#39;library&#39;.
+	compiler: string = &#39;clang++&#39;
+	cacheTool?: string
+] {
+	# ...
+}</code></pre><p>Another nice thing from Nushell is that it generates a help page from these parameters.</p><p><img src="/assets/images/build-systems/help.png" alt="Help page of the build command." /></p><p>To use this command, you just have to pass in the arguments that you want.</p><pre><code class="language-nushell"># Build script for stowy physics engine
+
+source ../common.nu
+
+def main [buildType: string = &#39;debug&#39;] {
+	let isRelease = $buildType == &#39;release&#39;
+
+	# Setup flags
+	let compilerFlags = [ &#39;-std=c++20&#39; &#39;-fPIC&#39; (if $isRelease { &#39;-O3&#39; } else { &#39;-g3&#39; })]
+	let includeFlags = [&#39;-Isrc&#39;]
+	let linkerFlags = [&#39;-shared&#39; ]
+	let defines = [&#39;-DSTWEXPORT&#39; (if $isRelease { &#39;-DNDEBUG&#39;} else { &#39;-DDEBUG&#39; })]
+
+	build stowy_physics_engine &#39;src/&#39; &#39;../bin/&#39; $compilerFlags $includeFlags $linkerFlags $defines $buildType library &#39;clang++&#39;
+}</code></pre><p>Now let&#39;s see how the build command is made.
+First we check if we&#39;re building in release and the we split the compiler name.</p><pre><code class="language-nushell">let isRelease = $buildType == &#39;release&#39;
+# We need to split the compiler to handle cases such as
+# &quot;zig c++&quot; because run-external doesn&#39;t like spaces
+let splitCompiler = ($compiler | split row &#39; &#39;)</code></pre><p>I will go into more detail on why we split the compiler name once we arrive at the part with <code>run-external</code>.</p><p>Then we need to define the name of the assembly.
+It will depend on whether we&#39;re on windows or linux and on whether we&#39;re building a library or an executable.
+Then the path is split then joined, this is to have a path that doesn&#39;t mix <code>/</code> and <code>\</code>.
+This isn&#39;t strictly necessary, but I did it just to be on the safe side.</p><pre><code class="language-nushell">let assemblyOutputFile = if $targetType == &#39;executable&#39; {
+	if $nu.os-info.name == &#39;windows&#39; {
+		$&#39;($binaryDirectory)/($assemblyName).exe&#39;
+	} else {
+		$&#39;($binaryDirectory)/($assemblyName)&#39;
+	}
+} else if $targetType == &#39;library&#39; {
+	if $nu.os-info.name == &#39;windows&#39; {
+		$&#39;($binaryDirectory)/($assemblyName).dll&#39;
+	} else {
+		$&#39;($binaryDirectory)/lib($assemblyName).so&#39;
+	}
+} else {
+	exit 2
+}
+let assemblyOutputFile = $assemblyOutputFile  | path split | path join</code></pre><p>Then we get the <code>.cpp</code> files and get their path relative to the source directory.</p><pre><code class="language-nushell">let cppFiles = glob **/*.cpp
+let relativeCppFiles = ($cppFiles  | path relative-to $sourceDirectory | path parse)</code></pre><p>And now we will build each <code>.cpp</code> file separately into a <code>.o</code> file.
+We do that so that we can cache the compilation of each file and also parallelize this step using <code>par-each</code>.</p><pre><code class="language-nushell"># Build every .cpp to .o and get a list of every .o
+let objectFiles = $relativeCppFiles | par-each {|relativeCppFile| (
+	# Convert from path object to string
+	let inputFile = ($relativeCppFile | path join);
+	let outputFile = ($relativeCppFile | upsert extension &#39;o&#39; | path join);
+
+	# Recreate the folder structure of .cpp files for the .o in the binary directory
+	let inputDirectory = ($relativeCppFile | get parent);
+	mkdir ($&#39;($binaryDirectory)/($inputDirectory)&#39;);
+
+	# concatenate the .o file with the bin directory
+	let outputFileWithDir = ($&#39;($binaryDirectory)/($outputFile)&#39; | path split | path join);
+	let sourceFileWithDir = ($&#39;($sourceDirectory)($inputFile)&#39; | path split | path join);
+
+	if $cacheTool != null {
+		run-external $cacheTool $compiler &#39;-c&#39; &#39;-o&#39; $outputFileWithDir $sourceFileWithDir $defines $includeFlags $compilerFlags
+	} else {
+		run-external $splitCompiler.0 ($splitCompiler | range 1..) &#39;-c&#39; &#39;-o&#39; $outputFileWithDir $sourceFileWithDir $defines $includeFlags $compilerFlags
+	};
+
+	$outputFileWithDir
+)}</code></pre><p>As you can see, we now use the splited compiler.
+This is here because if you try to run a command that has a space in its name with <code>run-external</code>
+it will try to find an executable with this exact name and fail.
+But if you&#39;re familiar with Nushell, you might wonder why I don&#39;t use the syntax with <code>^</code> to run the command ?
+Because yes I could write</p><pre><code class="language-nushell">^$compiler -c -o $outputFileWithDir # ...</code></pre><p>But this had the problem where the command would return before it was done with building the <code>.o</code>,
+which was then a problem when the linker tried reading <code>.o</code> files that didn&#39;t exist.
+The only way I find to mitigate this was to use <code>run-external</code>.</p><p>I guess this is just what happens when you use something new like Nushell, bugs will happen.</p><p>Anyway, now that the <code>.cpp</code> files are built, we can link them.</p><pre><code class="language-nushell">run-external $splitCompiler.0 ($splitCompiler | range 1..) &#39;-o&#39; $assemblyOutputFile $objectFiles $linkerFlags $includeFlags $defines $compilerFlags</code></pre><p>And tada !
+We have a project that can build on both Windows and Linux and that supports caching !</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong></li><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong></li></ul><h3>Cons</h3><ul><li><strong>Bugs</strong> : I had to go through some hoops to avoid bugs from Nushell</li></ul><p>But what if we could have a build system with a nice syntax, type safety, portability, cached builds and no bugs ?
+Well, this is where Zig comes in !</p><h2>Zig</h2><p>Zig is a programming language that places itself as a C successor, but the toolchain also comes with a C++ compiler !</p><p>You can create a <code>build.zig</code> file in your project with a <code>build</code> function and zig will build this file and then run it.
+This will then build the project.</p><pre><code class="language-zig">const std = @import(&quot;std&quot;);
+const Builder = @import(&quot;std&quot;).build.Builder;
+
+pub fn build(b: *Builder) void {
+	// ..
+}</code></pre><p>Then we need to add the default target and optimize options.</p><pre><code class="language-zig">const target = b.standardTargetOptions(.{});
+const optimize = b.standardOptimizeOption(.{});</code></pre><p>And now we can start defining our project.
+This time I decided to not put it in multiple file, so the two projects will be defined here.
+For the library, we need to create a new shared library and then give it the different parameters.</p><pre><code class="language-zig">const stowyPhysicsEngine = b.addSharedLibrary(.{
+	.name = &quot;stowy_physics_engine&quot;,
+	.target = target,
+	.optimize = optimize,
+});
+stowyPhysicsEngine.linkLibCpp();
+stowyPhysicsEngine.force_pic = true;
+stowyPhysicsEngine.addCSourceFiles(
+	&amp;.{&quot;stowy_physics_engine/src/math/Vector2.cpp&quot;}, // And other...
+	&amp;.{ &quot;-std=c++20&quot;, &quot;-DSTWEXPORT&quot; }
+);
+stowyPhysicsEngine.addIncludePath(.{ .path = &quot;stowy_physics_engine/src/&quot; });</code></pre><p>And then we add the test bed.</p><pre><code class="language-zig">const testbed = b.addExecutable(.{
+	.name = &quot;testbed&quot;,
+	.target = target,
+	.optimize = optimize,
+});
+testbed.linkLibCpp();
+testbed.linkLibrary(stowyPhysicsEngine);
+testbed.addIncludePath(.{ .path = &quot;stowy_physics_engine/src/&quot; });
+testbed.addIncludePath(.{ .path = &quot;testbed/src&quot; });
+testbed.addCSourceFiles(&amp;.{&quot;testbed/src/main.cpp&quot;}, &amp;.{&quot;-std=c++20&quot;});
+testbed.linkSystemLibrary(&quot;c++&quot;);
+
+// LTO is enabled by default, but doesnt work on windows...
+testbed.want_lto = false;</code></pre><p>Remember when I said without bugs ?
+Well, I kinda lied...
+Zig by default enables <a href="https://www.llvm.org/docs/LinkTimeOptimization.html">Link Time Optimizations</a>, but it doesn&#39;t work on Windows.
+So we need to disable it to have a working build.</p><p>And then we can add a run step to the build.
+This means that we&#39;ll be able to do <code>zig build run</code> to build and run the program.</p><pre><code class="language-zig">b.installArtifact(testbed);
+
+const run_cmd = b.addRunArtifact(testbed);
+run_cmd.step.dependOn(b.getInstallStep());
+
+if (b.args) |args| {
+	run_cmd.addArgs(args);
+}
+
+const run_step = b.step(&quot;run&quot;, &quot;Run the app&quot;);
+run_step.dependOn(&amp;run_cmd.step);</code></pre><p>And that&#39;s all we have to do to build out project with Zig.
+One nice thing that comes with this approach is that Zig comes with Windows headers.
+This means that if you build an app that uses the Windows API, you don&#39;t always have to install Visual Studio
+(although that could mean you can&#39;t use some modern features).</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong></li><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong> : Zig has its own cache</li><li><strong>No need for Visual Studio for Windows Headers</strong></li></ul><h3>Cons</h3><ul><li><strong>No LTO on Windows</strong></li></ul><h2>CMake</h2><p>And to close this blogpost, let&#39;s take a look at the C++ industry standard : CMake.</p><p>Well first the top level <code>CMakeLists.txt</code> file is pretty simple, we just create the project and add the subdirectories.</p><pre><code class="language-cmake">cmake_minimum_required(VERSION 3.27)
+
+project(&quot;BuildSystemTests&quot;)
+
+if(NOT CMAKE_BUILD_TYPE)
+  message(&quot;Build Type not set, defaulting to Debug...&quot;)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+add_subdirectory(&quot;stowy_physics_engine&quot;)
+add_subdirectory(&quot;testbed&quot;)</code></pre><p>And then we can configure the library by listing its source files.</p><pre><code class="language-cmake">cmake_minimum_required (VERSION 3.27)
+
+project(&quot;StowyPhysicsEngine&quot;)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_library(StowyPhysicsEngine)
+
+set(public_headers &quot;src/math/Vector2.hpp&quot;)
+
+target_sources(StowyPhysicsEngine PRIVATE &quot;src/math/Vector2.cpp&quot; ${public_headers})
+
+target_include_directories(StowyPhysicsEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+target_compile_definitions(StowyPhysicsEngine PUBLIC STWCMAKE)</code></pre><h3>Pros</h3><ul><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong> : Will depend on what kind of project CMake generates</li><li><strong>Compiler Independent</strong></li><li><strong>Standard of the language</strong></li><li><strong>Very easy to include libraries that use CMake</strong></li></ul><h3>Cons</h3><ul><li><strong>Hard to learn</strong></li><li><strong>Weird syntax</strong></li></ul><h2>Conclusion</h2><p>So after looking at everything, what will I use in my next C++ project ?
+I think I&#39;m gonna stay with CMake, the fact that it&#39;s so easy to use 3rd party code with it makes it a no brainer.
+Also, now that I&#39;ve learned to use it, I think it&#39;s the simplest way to get things done.
+I lost so much time debugging weird things when I used Nushell and Zig that it made me like CMake.
+I just wish that there was an even better option out there, every time I touch a C++ project,
+I miss <a href="https://doc.rust-lang.org/stable/cargo/">Cargo</a>.</p><p>I know there are options like <a href="https://premake.github.io/">Premake</a>, <a href="https://xmake.io/#/">xmake</a> or <a href="https://mesonbuild.com/">Meson</a>
+but even without having used them, I something tells me I will have a bad time trying to use a CMake only library with them.</p>
+	</article>
+</main>
+<footer>© 2026 Fabian Huber</footer>
+<!--<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+	mediumZoom('p img', {
+		margin: 24,
+		background: '#000000CC'
+	})
+</script>-->
+
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+<script>
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('p img');
+
+	// Loop through all images and add a click event
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src; // Copy the clicked image's source
+			lightbox.style.display = 'block'; // Show the lightbox
+		});
+	});
+
+	// Close the lightbox when clicking anywhere on it
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = ""; // Clear out the source
+	});
+</script>
+</body>
+</html>

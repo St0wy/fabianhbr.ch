@@ -1,0 +1,13 @@
+<?jai if posts.count > 0 { ?>
+	<h2>Posts</h2>
+	<ul class="posts">
+	<?jai for post: posts { ?>
+		<li>
+			<?jai echo("<a href=\"/posts/%\">%</a>", post.slug, post.title); ?>
+			<?jai if post.description.count > 0 { ?><p class="description"><?jai echo("%", post.description); ?></p><?jai } ?>
+			<p class="date"><?jai echo("%-%-%", post.pub_date_time.year, post.pub_date_time.month_starting_at_0 + 1, post.pub_date_time.day_of_month_starting_at_0 + 1); ?></p>
+
+		</li>
+	<?jai } ?>
+	</ul>
+<?jai } ?>

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>How I implemented a deferred PBR renderer in OpenGL - Fabian Huber</title>
+		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/">About</a></li>
+				</ul>
+			</nav>
+		</header>
+
+<main>
+	<article>
+		<header>
+			<h1>How I implemented a deferred PBR renderer in OpenGL</h1>
+			<p class="date">2023-7-18</p>
+		</header>
+		<p>In this blog post, I will explain some of the technical details behind my implementation of a deferred PBR renderer in OpenGL.</p><p>I won&#39;t go into too many details about the computer graphics concepts applied here. If that&#39;s something of interest to you,
+you can read <a href="https://learnopengl.com/">LearnOpenGL</a> which is where I learned everything needed to make this scene real!</p><p><img src="/assets/images/opengl-scene/chat.jpg" alt="Picture of the demo scene of my renderer" /></p><h2>Assets</h2><p>Before we talk about how things are rendered, let&#39;s talk about how the models and textures used are loaded.</p><h3>3D Models</h3><p>Most of the complex stuff about 3D models loading is handled by the amazing <a href="http://www.assimp.org/">Assimp</a> library.
+Although it greatly simplifies the process, it&#39;s still necessary to see how each 3D model format is stored.
+As the renderer started by using the Blinn-Phong lighting model, it was easier to use the OBJ format.
+The fact that everything is editable by text made it really convenient to use and edit.
+However, as the renderer moved to PBR, it became more and more complex to use OBJs, as the standard doesn&#39;t define how the PBR materials should be stored,
+and each program/library does it its own way.
+Furthermore, OBJ stores the vertex data in plain text. This makes it really slow to load and parse, as a lot of memory is wasted.
+All of those facts made me move to a more suited format: <a href="https://www.khronos.org/gltf/">glTF</a>.</p><p>glTF stores the vertex data in binary format, and even has to option to store everything in binary with .glb files.
+<a href="https://github.com/CesiumGS/obj2gltf">obj2gltf</a> allowed me to convert all my OBJ models to glTF, and it even has
+the option to merge the ambient occlusion, roughness and metallic (ARM) maps into one file.</p><p>With my glTFs in hand, I had to adapt my asset loading code.
+As I still wanted to support models that have three separate textures for the ARM maps, I decided to check if the model had an ARM map.
+But to my surprise, Assimp doesn&#39;t have an option to check this, which means the only way to know is to check the texture type <code>aiTextureType</code>.
+To make things worse, this ARM map counts as a roughness map and as a metalness.
+So if you&#39;re not careful, you might load the map three times.</p><p>But with everything I needed to know in mind, I could write my material loading function.</p><pre><code class="language-cpp">// The function returns a vector because I later need to see if the meshes
+// that I&#39;m loading have a material that I can handle
+std::vector&lt;std::size_t&gt; stw::MaterialManager::LoadMaterialsFromAssimpScene(
+	const aiScene* assimpScene, const std::filesystem::path&amp; workingDirectory, TextureManager&amp; textureManager) {
+	const std::span&lt;aiMaterial*&gt; assimpMaterials{ assimpScene-&gt;mMaterials, assimpScene-&gt;mNumMaterials };
+
+	std::vector&lt;std::size_t&gt; assimpMaterialIndicesLoaded;
+	assimpMaterialIndicesLoaded.reserve(assimpMaterials.size());
+
+	for (usize i = 0; i &lt; assimpMaterials.size(); i++) {
+		aiMaterial* material = assimpMaterials[i];
+		auto diffuseCount = material-&gt;GetTextureCount(aiTextureType_DIFFUSE);
+		auto baseColorCount = material-&gt;GetTextureCount(aiTextureType_BASE_COLOR);
+		// ...
+		auto unknownCount = material-&gt;GetTextureCount(aiTextureType_UNKNOWN);
+
+		if ((diffuseCount &gt; 0 || baseColorCount &gt; 0) &amp;&amp;
+			normalCount &gt; 0 &amp;&amp;
+			roughnessCount &gt; 0 &amp;&amp;
+			metallicCount &gt; 0) {
+			if (unknownCount == 0) {
+				if (ambientCount &gt; 0 || ambientOcclusionCount &gt; 0) {
+					LoadPbrNormal(material, workingDirectory, textureManager);
+					assimpMaterialIndicesLoaded.push_back(i);
+				} else {
+					LoadPbrNormalNoAo(material, workingDirectory, textureManager);
+					assimpMaterialIndicesLoaded.push_back(i);
+				}
+			} else {
+				LoadPbrNormalArm(material, workingDirectory, textureManager);
+				assimpMaterialIndicesLoaded.push_back(i);
+			}
+		} else {
+			spdlog::debug(&quot;Unhandled material&quot;);
+		}
+	}
+
+	return assimpMaterialIndicesLoaded;
+}</code></pre><h3>Textures</h3><p>Textures where way easier to handle than 3D models.
+All you have to do is give a path to <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb</a>, get the <code>char*</code>, give it to OpenGL and tada!</p><p>However, this was, unfortunately, the slowest part of the asset loading code.
+I would often spend 20ms on Assimp&#39;s code and my code reading Assimps data and then 2200ms on texture loading.</p><p>This is why I then decided to use another format: KTX.
+This format has the benefit to be readable by the GPU, which gives way better performance when loading it and giving it to the GPU.
+It also has the benefit of having some metadata on how the format should be read by OpenGL (such as if it&#39;s in linear space or in SRGB).
+I was also able to bake the mipmaps directly inside the file and to compress it to make it even smaller than the PNG (from 33 MB to 8 MB).</p><p>To add to the list of great things of this format, the loading code was really easy to implement thanks to Khronos&#39; <a href="https://github.com/KhronosGroup/KTX-Software">libktx</a>.
+All you have to do is load the KTX with <code>ktxTexture</code> and then give this file to <code>ktxTexture</code>.
+It will then give back to you the OpenGL id that you can use for rendering.</p><h2>Scene Graph</h2><p>A scene graph is a way to organise elements in a scene by having elements that are children of other elements.
+If the parent moves, all of its children must move in the same way.</p><p>Having already implemented a scene graph on my C# CPU rasterizer project <a href="https://3dviewer.readthedocs.io/fr/latest/analyseOrganique.html#graphe-de-scene">3D Viewer</a>,
+I had a rough idea of what I needed to do to implement it.
+That said, in 3D viewer my scene graph worked by having <code>List</code> that contained elements that contained <code>List</code> etc,
+but this is horrible in terms of performance, so I decided to go in another direction.</p><p>My scene graph is basically made of two vectors.</p><pre><code class="language-cpp">std::vector&lt;SceneGraphElement&gt; m_Elements{};
+std::vector&lt;SceneGraphNode&gt; m_Nodes{};</code></pre><p>The nodes are here to describe the tree layout. They each have an index to an element.
+The elements have an id to their mesh and to their material. They also have their local transform matrix and their parent&#39;s.</p><pre><code class="language-cpp">struct SceneGraphElement
+{
+	std::size_t meshId = InvalidId;
+	std::size_t materialId = InvalidId;
+	glm::mat4 localTransformMatrix{ 1.0f };
+	glm::mat4 parentTransformMatrix{ 1.0f };
+};
+
+struct SceneGraphNode
+{
+	std::size_t elementId = InvalidId;
+	std::optional&lt;std::size_t&gt; parentId{};
+	std::optional&lt;std::size_t&gt; childId{};
+	std::optional&lt;std::size_t&gt; siblingId{};
+};</code></pre><p>From this you might be wondering:</p><blockquote><p>Buy why do you have children and siblings?</p></blockquote><p>And this is a great question!
+As I didn&#39;t want to store a vector of children, because it would be on the heap and would require allocations, I went with a method that avoided this.
+It also keeps all of the data next to each other, and this makes the structure more cache friendly.
+This means that my scene graph looks something like this:</p><p><img src="/assets/images/opengl-scene/scene-graph.svg" alt="graph on how the scene graph is layed out" /></p><p>And what&#39;s nice with this code, is that traversing the tree to draw it to the screen is not that
+much more complex than using some good old <a href="https://en.wikipedia.org/wiki/Depth-first_search">DFS</a>.</p><pre><code class="language-cpp">// This method is private
+void stw::SceneGraph::ForEachChildren(
+	const stw::SceneGraphNode&amp; startNode, const std::function&lt;void(SceneGraphElement&amp;)&gt;&amp; function) {
+	if (!startNode.childId) return;
+
+	std::vector&lt;std::size_t&gt; nodes;
+	nodes.reserve(m_Nodes.size());
+	nodes.push(startNode.childId.value());
+	while (!nodes.empty()) {
+		const auto currentNode = nodes.back();
+		nodes.pop_back();
+		auto&amp; node = m_Nodes[currentNode];
+		auto&amp; element = m_Elements[node.elementId];
+		function(element);
+
+		if (node.childId) {
+			nodes.push_back(node.childId.value());
+		}
+
+		if (node.siblingId) {
+			nodes.push_back(node.siblingId.value());
+		}
+	}
+}</code></pre><p>But right now you might notice that if we have an element that has the same material id and mesh id, we do not profit from instancing.
+Well the <code>ForEach</code> public method on the class is here for that.</p><pre><code class="language-cpp">// A custom hash function is implemented for this type
+struct SceneGraphElementIndex
+{
+	std::size_t meshId = InvalidId;
+	std::size_t materialId = InvalidId;
+
+	bool operator==(const SceneGraphElementIndex&amp; other) const;
+};
+
+void stw::SceneGraph::ForEach(
+	const std::function&lt;void(SceneGraphElementIndex,
+	std::span&lt;const glm::mat4&gt;)&gt;&amp; function) {
+	// Abseil hash map because std::unordered_map is slower
+	absl::flat_hash_map&lt;SceneGraphElementIndex, std::vector&lt;glm::mat4&gt;&gt; instancingMap{};
+
+	ForEachChildren(m_Nodes[0], [&amp;instancingMap](SceneGraphElement&amp; element) {
+		if (element.materialId == InvalidId || element.meshId == InvalidId)
+			return;
+
+		const glm::mat4 transform =
+			element.parentTransformMatrix * element.localTransformMatrix;
+		const SceneGraphElementIndex index{ element.meshId, element.materialId };
+
+		instancingMap[index].push_back(transform);
+	});
+
+	for (const auto&amp; [elementIndex, transforms] : instancingMap) {
+		function(elementIndex, transforms);
+	}
+}</code></pre><p>As you can see, we first loop over the graph, and each object is added to a hash map.
+This map basically has the material and mesh ids as a key.
+This means that we can then draw each element with their respective transforms.
+One thing I don&#39;t like with this implementation is the <code>std::vector</code> as value in the hash map, as it forces to do allocations for each element in the scene.
+Unfortunately, I couldn&#39;t come up with a better way to do it.</p><h2>Renderer Class</h2><p>One thing that helped quite a lot in this project was having a renderer class where I could implement the different computer graphics concepts away from the &quot;user&quot; code
+(this isn&#39;t a library, but you get what I mean).</p><p>This class contains:</p><ul><li>OpenGL&#39;s &quot;global functions&quot; (for ex. <code>glClear</code>, <code>glFrontFace</code>)</li><li>Light management (you can add point and directional lights to it)</li><li>All of the other managers (MaterialManager, TextureManager, SceneGraph, ...)</li><li>The framebuffers and pipelines (also known as the shader class in LearnOpenGL)</li></ul><p>I&#39;m not gonna show code that&#39;s inside this class as it&#39;s kinda messy and the .cpp is 1409 lines long as of writing (oops 😅).
+But the result of this is that using it is really convenient:</p><pre><code class="language-cpp">void Init() {
+	m_Renderer-&gt;Init(screenSize);
+														// Flag to flip UVs
+	result = m_Renderer-&gt;LoadModel(&quot;./data/cat_gltf/cat.gltf&quot;, true);
+	if (!result.has_value())
+	{
+		spdlog::error(&quot;Error on model loading : {}&quot;, result.error());
+	}
+
+	auto nodeVec = result.value();
+	m_CatNodeIndex = nodeVec[0];
+	m_Renderer-&gt;GetSceneGraph().TranslateElement(
+		m_CatNodeIndex, glm::vec3{ 0.3f, 0.4f, 0.0f });
+	m_Renderer-&gt;GetSceneGraph().ScaleElement(
+		m_CatNodeIndex, glm::vec3{ 4.0f, 4.0f, 4.0f });
+
+	const PointLight p{ glm::vec3{ 5.0f, 0.0f, 4.0f }, glm::vec3{ 20.0f } };
+	m_Renderer-&gt;PushPointLight(p);
+}
+
+void Update() {
+	m_Renderer-&gt;Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// As long as you don&#39;t look into Init and DrawScene, everything is fine!
+	m_Renderer-&gt;DrawScene();
+}
+
+void Delete() {
+	m_Renderer-&gt;Delete();
+}</code></pre><h2>Materials</h2><p>As you saw above, I wanted to be able to load models that have different kind of materials in the project.
+For example, one material could have an ambient occlusion map and another one might not.
+This is where my material system comes into place.</p><p>First, each material is defined as a struct that has an id of each texture is possess.</p><pre><code class="language-cpp">struct MaterialPbrNormalArm
+{
+	std::size_t baseColorMapIndex{};
+	std::size_t normalMapIndex{};
+	std::size_t armMapIndex{};
+};</code></pre><p>Then each material is placed in a <a href="https://en.cppreference.com/w/cpp/utility/variant"><code>std::variant</code></a>.
+I chose this class because it&#39;s the closest thing we have in C++ to Rust&#39;s wonderful enums.</p><pre><code class="language-cpp">using Material = std::variant&lt;InvalidMaterial, MaterialPbrNormal, MaterialPbrNormalNoAo, MaterialPbrNormalArm&gt;;</code></pre><p>This means that when I need to bind the material&#39;s textures for the geometry pass, I can use <code>std::visit</code>
+which will call the correct lambda for the current material.</p><pre><code class="language-cpp">using GBufferPipelinesArray =
+	std::array&lt;std::reference_wrapper&lt;stw::Pipeline&gt;, MaterialCount&gt;;
+
+void stw::BindMaterialForGBuffer(
+	const stw::Material&amp; materialVariant,
+	stw::TextureManager&amp; textureManager,
+	const GBufferPipelinesArray&amp; gBufferPipelines
+)
+{
+	// Other lambdas
+
+	const auto pbrNormalArm = [&amp;textureManager, &amp;gBufferPipelines](const MaterialPbrNormalArm&amp; material) {
+		const Pipeline&amp; pipeline = gBufferPipelines[2];
+		pipeline.Bind();
+		// Bind each texture...
+	};
+
+	constexpr auto invalid = [](const InvalidMaterial&amp;) {
+		spdlog::error(&quot;Invalid material... {} {}&quot;, __FILE__, __LINE__);
+	};
+
+	std::visit(
+		Overloaded{ invalid, pbrNormal, pbrNormalNoAo, pbrNormalArm },
+		materialVariant
+	);
+}</code></pre><h2>Shadow Maps</h2><h3>Shadow Maps in View-space</h3><p>I won&#39;t explain how I implemented shadow maps, as this fairly well explained in LearnOpenGL.
+I will however mention one thing: shadow maps with view-space fragment position.
+In LearnOpenGL, to implement SSAO, the author explains that view-space fragment positons are required,
+but every other chapter on the website consider them to be in world-space.
+This is quite frustrating, because the change from one to the other is not trivial.</p><p>For point lights, the change is quite simple.
+You just use the negative of the fragment&#39;s position as the vector that points to the view
+and pass the light&#39;s position transformed by the view matrix.</p><pre><code class="language-glsl">vec3 viewDir = normalize(-fragPos);</code></pre><p>And if we didn&#39;t have shadow maps, it would be the same for the directional light.
+Only the direction vector would have to be transformed by the view matrix.
+But there is this <code>lightViewProjMatrix</code> that is responsible for transforming the fragment&#39;s position from world-space to the light&#39;s view-space.</p><p>Now ideally we would want this matrix to make the fragment go from the camera&#39;s view-space to the light&#39;s view-space.
+And fortunately, it&#39;s possible! You just have to multiply the <code>lightViewProjMatrix</code> by the inverse of the camera view matrix when you create it.</p><p>In summary:</p><pre><code class="language-cpp">glm::vec4 lightViewProjMatrix =
+	lightProjection * lightView * glm::inverse(cameraView);</code></pre><p>But now we have a problem in the depth pass that renders the light&#39;s shadow buffer,
+since it&#39;s supposed to multiply the vertices by the model matrix and the light view projection matrix.
+I guess the smart way to do it would be to create two matrices, one for the shadow pass and one for the directional light pass,
+but I choose to just multiply the light view projection matrix by the camera view matrix to invert the inverse (what?).</p><pre><code class="language-glsl">#version 430
+
+layout (location = 0) in vec3 aPos;
+layout (location = 4) in mat4 modelMatrix;
+
+uniform mat4 lightViewProjMatrix;
+
+layout (std140, binding = 0) uniform Matrices
+{
+	mat4 projection;
+	mat4 view;
+};
+
+void main()
+{
+	gl_Position = lightViewProjMatrix * view *  modelMatrix * vec4(aPos, 1.0);
+}</code></pre><h3>Cascaded Shadow Maps</h3><p>Cascaded shadow maps are conceptually quite simple to implement, the hardest part is having a light that englobes the view frustum (or part of it as we will see).</p><p>My implementation is a mix of multiple ones I found on the internet, but the one that helped the most is from <a href="https://ogldev.org/www/tutorial49/tutorial49.html">OGL</a>.</p><p>One thing I really struggled with, is having weird shadows although the math seemed correct.
+The problem almost always came from the light&#39;s view frustum that wasn&#39;t of a correct size.
+To fix this, after computing the part of the camera view frustum I wanted to see for this map, I added some margin to the size of the light view frustum.</p><pre><code class="language-cpp">// Compute max and mix like in OGL&#39;s tutorial
+
+f32 midLenX = (maxX - minX) / 2.0f;
+f32 midLenY = (maxY - minY) / 2.0f;
+f32 midLenZ = (maxZ - minZ) / 2.0f;
+
+const f32 midX = minX + midLenX;
+const f32 midY = minY + midLenY;
+const f32 midZ = minZ + midLenZ;
+
+constexpr f32 zMultiplier = 5.0f;
+constexpr f32 xyMargin = 1.1f;
+midLenX *= xyMargin;
+midLenY *= xyMargin;
+midLenZ *= zMultiplier;
+
+const glm::vec3 minLightProj{ midX - midLenX, midY - midLenY, midZ - midLenZ };
+const glm::vec3 maxLightProj{ midX + midLenX, midY + midLenY, midZ + midLenZ };</code></pre><p><code>zMultiplier</code> and <code>xyMargin</code> are two constants I changed depending on the artifacts I would get when modifying the engine.</p><h2>The steps of a deferred rendered frame</h2><p>So now that we know some of the secrets that make up the engine, let&#39;s look at what a frame is made out of.</p><p>The first thing that&#39;s done is the geometry pass all of the informations that the future passes are gonna need into one framebuffer with three color attachments.</p><p>The first attachment has the fragments positions in view-space on the RGB channels and the ambient occlusion factor in the alpha.</p><p><img src="/assets/images/opengl-scene/fragPos.png" alt="fragPos" /></p><p><img src="/assets/images/opengl-scene/ambientOcclusion.png" alt="ambientOcclusion" /></p><p>Then in the second attachment, the normals in view-space and the roughness are stored.</p><p><img src="/assets/images/opengl-scene/normal.png" alt="normal" /></p><p><img src="/assets/images/opengl-scene/roughness.png" alt="roughness" /></p><p>And in the third attachment, we have the base color and the metallic.</p><p><img src="/assets/images/opengl-scene/baseColor.png" alt="baseColor" /></p><p><img src="/assets/images/opengl-scene/metallic.png" alt="metallic" /></p><p>After this pass, we take the fragments in view-space and use them to compute the SSAO.
+A blur effect is then applied to smooth out the noise.</p><p><img src="/assets/images/opengl-scene/ssao.png" alt="ssao" /></p><p>Then, the four levels of the cascaded shadow maps are rendered. (I&#39;ll only show two of them.)</p><p><img src="/assets/images/opengl-scene/lightDepth.png" alt="lightDepth" /></p><p><img src="/assets/images/opengl-scene/lightDepth2.png" alt="lightDepth2" /></p><p>After this, we can start to render the lights.
+For this, we enable blending and call three pipelines:</p><ul><li>Ambient lighting (IBL)</li><li>Directional light (with shadow)</li><li>Point lights</li></ul><p>The ambient lighting and directional light are rendered using a quad that&#39;s the size of the screen, because they apply to every object.
+Then, the point lights are rendered by rendering a sphere that has the same position and radius of the light.
+This allows to only update the pixels impacted by the light and saves on performance.</p><p>The ambient lighting looks like this:</p><p><img src="/assets/images/opengl-scene/ambient.png" alt="ambientLighting" /></p><p>Then the point light (yes it&#39;s very similar):</p><p><img src="/assets/images/opengl-scene/pointLight.png" alt="pointLight" /></p><p>And finally the directional light:</p><p><img src="/assets/images/opengl-scene/directional.png" alt="directionalLight" /></p><p>Now that the light computation is done, spheres that are the color of the lights are rendered on top of the attachment and the skybox is drawn.</p><p><img src="/assets/images/opengl-scene/skybox.png" alt="skybox" /></p><p>Then bloom is rendered.</p><p><img src="/assets/images/opengl-scene/bloom.png" alt="bloom" /></p><p>And now we can mix the bloom with the previous framebuffer and apply some HDR tone mapping and gamma correction.
+(In my case I use Narkowicz ACES).</p><p><img src="/assets/images/opengl-scene/final.png" alt="final" /></p><p>Et voilà! It took a lot of effort, but we have our final image.</p><h2>Conclusion</h2><p>I&#39;m really proud of what I&#39;ve done.
+Computer graphics is the domain where I want to work and this project taught me a lot.
+I think I put in a lot of work, and the final result shows it.</p><p>That being said, there are still some things I could improve.
+Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add Frustum Culling</li><li>Add a bit of multi-threading somewhere</li><li>Do some benchmarks and analyze the code with tracy to optimize it a bit (this one is just for fun)</li></ul><p>You can find the code of this project on my <a href="https://github.com/St0wy/opengl-scene">GitHub</a>.</p><p>In the longer term, I really want to explore other graphics API using other programming languages.</p><p>Right now my goals are:</p><ul><li>Direct3D 11: Odin</li><li>Direct3D 12: Zig</li><li>Vulkan: Rust</li></ul><p>I hope I&#39;ll be able to work on these projects and maybe write a blogpost about it!</p><p><em>now some bonus funny visual bugs</em></p><p><img src="/assets/images/opengl-scene/bobomb.jpg" alt="bob omb" /></p><p><img src="/assets/images/opengl-scene/cursed.png" alt="cursed" /></p><p><img src="/assets/images/opengl-scene/spike.png" alt="spike" /></p><p><em>and the full IBL developed integral because why not</em></p><p><img src="/assets/images/opengl-scene/ibl.png" alt="ibl" /></p>
+	</article>
+</main>
+<footer>© 2026 Fabian Huber</footer>
+<!--<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+	mediumZoom('p img', {
+		margin: 24,
+		background: '#000000CC'
+	})
+</script>-->
+
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+<script>
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('p img');
+
+	// Loop through all images and add a click event
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src; // Copy the clicked image's source
+			lightbox.style.display = 'block'; // Show the lightbox
+		});
+	});
+
+	// Close the lightbox when clicking anywhere on it
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = ""; // Clear out the source
+	});
+</script>
+</body>
+</html>

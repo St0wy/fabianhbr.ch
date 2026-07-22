@@ -2,17 +2,9 @@
 title: An exploration of build systems for C++ projects
 slug: an-exploration-of-build-systems-for-cpp-projects
 pubDatetime: 2023-09-26
-featured: true
-tags:
-    - build-systems
-    - nushell
-    - cmake
-    - cpp
-    - english
+tags: build-systems, nushell, cmake, cpp, english
 description: Exploring how to build a C++ project using Batch, Powershell, Nushell, Zig and CMake.
 ---
-
-## Table of Contents
 
 ## Introduction
 
@@ -35,7 +27,7 @@ To have something to build, I decided to use my [physics engine](https://www.fab
 and build it as a shared library.
 This library is then linked into a test bed executable that uses the library.
 
-![Schema of the project.](/src/assets/images/build-systems/project.png)
+![Schema of the project.](/assets/images/build-systems/project.png)
 
 The folder structure of the project looks something like this :
 
@@ -62,7 +54,7 @@ The first part of the script is about checking if we want to build in release,
 get every `.cpp` files and setting the compiler flags in variables.
 Then we call clang to build the project.
 
-```batch
+```dos
 @REM Build script for stowy physics engine
 @ECHO OFF
 SetLocal EnableExtensions EnableDelayedExpansion
@@ -105,7 +97,7 @@ The executable has a pretty similar script, just with different flags to be able
 Then the script to build both is also pretty simple.
 It basically creates the bin directory then call each script in their own directory.
 
-```batch
+```dos
 @ECHO OFF
 REM Build Everything
 
@@ -216,7 +208,7 @@ As you can see below, in Nushell you must have a main function in scripts,
 which is super nice because it allows to have type-safe parameters.
 Another nice thing is that variables are immutable by default and that the syntax is terser than Powershell.
 
-```nu
+```nushell
 # Build script for stowy physics engine
 
 def main [input?: string] {
@@ -274,7 +266,7 @@ build_system_tests/
 
 And the library can source the file like this :
 
-```nu
+```nushell
 # Build script for stowy physics engine
 source ../common.nu
 def main [buildType: string = 'debug'] {
@@ -284,7 +276,7 @@ def main [buildType: string = 'debug'] {
 
 In `common.nu`, there is a `build` command that takes the necessary parameters.
 
-```nu
+```nushell
 # Builds the assembly according to the parameters
 def build [
 	assemblyName: string,
@@ -305,11 +297,11 @@ def build [
 
 Another nice thing from Nushell is that it generates a help page from these parameters.
 
-![Help page of the build command.](/src/assets/images/build-systems/help.png)
+![Help page of the build command.](/assets/images/build-systems/help.png)
 
 To use this command, you just have to pass in the arguments that you want.
 
-```nu
+```nushell
 # Build script for stowy physics engine
 
 source ../common.nu
@@ -330,7 +322,7 @@ def main [buildType: string = 'debug'] {
 Now let's see how the build command is made.
 First we check if we're building in release and the we split the compiler name.
 
-```nu
+```nushell
 let isRelease = $buildType == 'release'
 # We need to split the compiler to handle cases such as
 # "zig c++" because run-external doesn't like spaces
@@ -344,7 +336,7 @@ It will depend on whether we're on windows or linux and on whether we're buildin
 Then the path is split then joined, this is to have a path that doesn't mix `/` and `\`.
 This isn't strictly necessary, but I did it just to be on the safe side.
 
-```nu
+```nushell
 let assemblyOutputFile = if $targetType == 'executable' {
 	if $nu.os-info.name == 'windows' {
 		$'($binaryDirectory)/($assemblyName).exe'
@@ -365,7 +357,7 @@ let assemblyOutputFile = $assemblyOutputFile  | path split | path join
 
 Then we get the `.cpp` files and get their path relative to the source directory.
 
-```nu
+```nushell
 let cppFiles = glob **/*.cpp
 let relativeCppFiles = ($cppFiles  | path relative-to $sourceDirectory | path parse)
 ```
@@ -373,7 +365,7 @@ let relativeCppFiles = ($cppFiles  | path relative-to $sourceDirectory | path pa
 And now we will build each `.cpp` file separately into a `.o` file.
 We do that so that we can cache the compilation of each file and also parallelize this step using `par-each`.
 
-```nu
+```nushell
 # Build every .cpp to .o and get a list of every .o
 let objectFiles = $relativeCppFiles | par-each {|relativeCppFile| (
 	# Convert from path object to string
@@ -404,7 +396,7 @@ it will try to find an executable with this exact name and fail.
 But if you're familiar with Nushell, you might wonder why I don't use the syntax with `^` to run the command ?
 Because yes I could write
 
-```nu
+```nushell
 ^$compiler -c -o $outputFileWithDir # ...
 ```
 
@@ -416,7 +408,7 @@ I guess this is just what happens when you use something new like Nushell, bugs 
 
 Anyway, now that the `.cpp` files are built, we can link them.
 
-```nu
+```nushell
 run-external $splitCompiler.0 ($splitCompiler | range 1..) '-o' $assemblyOutputFile $objectFiles $linkerFlags $includeFlags $defines $compilerFlags
 ```
 

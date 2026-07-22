@@ -4,6 +4,7 @@
 #import "File_Utilities";
 #import "String";
 #import "Program_Print";
+#import "Sort";
 
 Markdown :: #import "Markdown";
 
@@ -11,6 +12,95 @@ OPEN_TAG :: "<?jai";
 CLOSE_TAG :: "?>";
 BUILD_DIR :: "public/";
 TEMPLATE_EXTENSION :: ".jaitml";
+
+Post :: struct {
+	title: string;
+	slug: string;
+	pub_date_time: Calendar_Time;
+	tags: [] string;
+	description: string;
+	html: string;
+}
+
+posts :: #run -> [] Post {
+	posts_arr: [..] Post;
+	visit_files("src/posts", false, *posts_arr, (info: *File_Visit_Info, posts_arr: *[..] Post) {
+		if info.is_directory then return;
+		ext, ok := path_extension(info.short_name);
+		if !ok then return;
+		if ext != "md" then return;
+
+		log("Parsing %", info.short_name);
+		markdown_file_contents := read_entire_file(info.full_name);
+		node := Markdown.parse(markdown_file_contents);
+		html := Markdown.emit_html(node);
+		post := parse_post_frontmatter(node.content);
+		post.html = html;
+		make_directory_if_it_does_not_exist(tprint("%posts/%", BUILD_DIR, post.slug));
+		array_add(posts_arr, post);
+	});
+	sorted := quick_sort(posts_arr, (post_a: Post, post_b: Post) -> int {
+		time_a := calendar_to_apollo(post_a.pub_date_time);
+		time_b := calendar_to_apollo(post_b.pub_date_time);
+		return compare_apollo_times(time_b, time_a);
+	});
+	return sorted;
+}
+
+title := "";
+
+parse_post_frontmatter :: (frontmatter: string) -> Post {
+	advance_to_newline :: inline (str: *string) {
+		while str.count > 0 && str.*[0] != "\n" advance(str);
+	}
+
+	skip_line :: inline (str: *string) {
+		if str.count == 0 then return;
+		c := str.*[0];
+		advance(str);
+		while str.count > 0 && c != "\n" {
+			c = str.*[0];
+			advance(str);
+		}
+	}
+
+	post: Post;
+	doc := frontmatter;
+	while doc.count > 0 {
+		key := doc;
+		while !starts_with(doc, ": ") advance(*doc);
+		key.count -= doc.count;
+		advance(*doc, 2);
+
+		value := doc;
+		advance_to_newline(*doc);
+		value.count -= doc.count;
+
+		// There's probably a magic-metaprogram-thing to do to write into the posts, but i'd rather do the easy thing for now
+		if key == {
+			case "title";
+				post.title = value;
+			case "slug";
+				post.slug = value;
+			case "pubDatetime";
+				ct: Calendar_Time;
+				splitted := split(value, "-");
+				post.pub_date_time.year = to_integer(splitted[0]).(s32);
+				post.pub_date_time.month_starting_at_0 = (to_integer(splitted[1]) - 1).(s8);
+				post.pub_date_time.day_of_month_starting_at_0 = (to_integer(splitted[2]) - 1).(s8);
+			case "tags";
+				post.tags = split(value, ", ");
+			case "description";
+				post.description = value;
+			case;
+				log_error("Unknown key in frontmatter (key: %, value: %)", key, value);
+		}
+
+		skip_line(*doc);
+	}
+
+	return post;
+}
 
 render_jaitml :: (path: string) -> string, bool {
 	content, ok := read_entire_file(path);
@@ -61,7 +151,7 @@ render_jaitml :: (path: string) -> string, bool {
 	return builder_to_string(*result), true;
 }
 
-execute_jaitml :: ($path: string, output_dir: string, $extra_code: Code = #code {}) #expand {
+execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code,null) #expand {
 	jaitml_string_builder: String_Builder;
 	echo :: (format_string: string, args: ..Any) #expand {
 		print_to_builder(*jaitml_string_builder, format_string, ..args);
@@ -89,12 +179,7 @@ execute_jaitml :: ($path: string, output_dir: string, $extra_code: Code = #code 
 		file_code_nodes := compiler_get_nodes(#code {
 			code :: #run render_jaitml(path);
 			#insert,scope() code;
-
-			current_file_path := parse_path(path);
-			filename := current_file_path.words[current_file_path.words.count - 1];
-			if ends_with(filename, TEMPLATE_EXTENSION) filename.count -= TEMPLATE_EXTENSION.count;
-			final_path := tprint("%%", output_dir, filename);
-			write_entire_file(final_path, *jaitml_string_builder);
+			write_entire_file(output_path, *jaitml_string_builder);
 		});
 
 		array_add(*statements_to_insert, file_code_nodes);
@@ -109,34 +194,21 @@ execute_jaitml :: ($path: string, output_dir: string, $extra_code: Code = #code 
 #run {
 	set_build_options_dc({do_output = false});
 
-	start := current_time_monotonic();
+	make_directory_if_it_does_not_exist(BUILD_DIR);
+	make_directory_if_it_does_not_exist(tprint("%posts", BUILD_DIR));
 
-	ok := make_directory_if_it_does_not_exist(BUILD_DIR);
-	assert(ok);
 
-	execute_jaitml("src/index.html.jaitml", BUILD_DIR, #code {
-		Post :: struct {
-			title: string;
-			description: string;
-			url: string;
+	#insert -> string {
+		sb: String_Builder;
+		for posts {
+			print_to_builder(*sb, "title = \"% - Fabian Huber\";", it.title);
+			print_to_builder(*sb, "execute_jaitml(\"src/post.html.jaitml\", tprint(\"\%posts/%/index.html\", BUILD_DIR), #code { POST_INDEX :: %; });", it.slug, it_index);
 		}
-		posts: [..] Post;
+		return builder_to_string(*sb);
+	};
 
-		visit_files("src/posts", false, *posts, (info: *File_Visit_Info, data: *[..] Post) {
-			if info.is_directory then return;
-			ext, ok := path_extension(info.short_name);
-			if !ok then return;
-			if ext != ".md" then return;
-			array_add(data, {copy_string(info.short_name), "", ""});
-		});
-	});
-	test_post := read_entire_file("src/posts/test.md");
-	// node := Markdown.parse(test_post);
-	// html := Markdown.emit_html(node);
-	// print("HTML:\n%\n", html);
-	// write_entire_file("file.html", html);
-	// execute_jaitml("src/rss.xml.jaitml", BUILD_DIR);
-
-	end := current_time_monotonic();
-	print("Generated site in %ms\n", to_float64_seconds(end - start) * 1000);
+	title = "Fabian Huber";
+	execute_jaitml("src/index.html.jaitml", tprint("%index.html", BUILD_DIR), #code { TITLE :: "Fabian Huber"; });
+	title = "Posts - Fabian Huber";
+	execute_jaitml("src/posts.html.jaitml", tprint("%/posts/index.html", BUILD_DIR), #code { TITLE :: "Posts"; });
 }

@@ -13,7 +13,7 @@ NodeKind :: enum u8 {
 	CodeBlock;
 	HtmlBlock;
 
-// Inline
+	// Inline
 	Text;
 	Strong;
 	Emphasis;
@@ -37,13 +37,168 @@ AstNode :: struct {
 	using data: NodeData;
 }
 
+// document is the markdown file content
 parse :: (document: string) -> root: *AstNode {
 	root := parse_blocks(document);
 	parse_inline(root);
 	return root;
 }
 
-// document is the mardown file content with frontmatter if there is one
+emit_html :: (node: *AstNode) -> string {
+	if !node then return "";
+	sb: String_Builder;
+	closing_tag: string;
+
+	if node.kind == {
+		case .Document; // Do nothing
+		case .Heading;
+			print_to_builder(*sb, "<h%>", node.level);
+			closing_tag = tprint("</h%>", node.level);
+		case .Paragraph;
+			append(*sb, "<p>");
+			closing_tag = "</p>";
+		case .Blockquote;
+			append(*sb, "<blockquote>");
+			closing_tag = "</blockquote>";
+		case .BulletList;
+			append(*sb, "<ul>");
+			closing_tag = "</ul>";
+		case .NumberList;
+			append(*sb, "<ol>");
+			closing_tag = "</ol>";
+		case .ListItem;
+			append(*sb, "<li>");
+			closing_tag = "</li>";
+		case .CodeBlock;
+			lang := ifx node.content.count > 0 then node.content else "plaintext";
+			print_to_builder(*sb, "<pre><code class=\"language-%\">", lang);
+			closing_tag = "</code></pre>";
+		case .ThematicBreak;
+			append(*sb, "<hr/>");
+			closing_tag = "";
+		case .HtmlInline; #through;
+		case .HtmlBlock;
+			append(*sb, node.content);
+			closing_tag = "";
+		case .Text;
+			append(*sb, escape_for_html(node.content));
+			// if node.next_sibling && node.next_sibling.kind == .Text then append(*sb, " ");
+		case .Strong;
+			append(*sb, "<strong>");
+			closing_tag = "</strong>";
+		case .Emphasis;
+			append(*sb, "<em>");
+			closing_tag = "</em>";
+		case .CodeInline;
+			append(*sb, "<code>");
+			closing_tag = "</code>";
+		case .Link;
+			print_to_builder(*sb, "<a href=\"%\">", node.content);
+			closing_tag = "</a>";
+		case .Image;
+			print_to_builder(*sb, "<img src=\"%\" alt=\"", node.content);
+			closing_tag = "\" />";
+		case;
+			log_error("Unhandled case in the html emitter : %", node.*);
+	}
+
+	child := node.first_child;
+	while child {
+		append(*sb, emit_html(child));
+		child = child.next_sibling;
+	}
+
+	append(*sb, closing_tag);
+
+	return builder_to_string(*sb);
+}
+
+#scope_module
+
+#import "Basic";
+#import "Flat_Pool";
+#import "String";
+
+List_Level :: struct {
+	list_node: *AstNode;
+	last_item: *AstNode;
+	indent: int;
+}
+
+pool: Flat_Pool;
+a: Allocator;
+
+MAX_SUBLISTS_COUNT :: 16;
+
+is_newline :: inline (c: u8) -> bool {
+	return c == "\n";
+}
+
+advance_to_newline :: inline (str: *string) {
+	while str.count > 0 && !is_newline(str.*[0]) advance(str);
+}
+
+skip_line :: inline (str: *string) {
+	if str.count == 0 then return;
+	c := str.*[0];
+	advance(str);
+	while str.count > 0 && !is_newline(c) {
+		c = str.*[0];
+		advance(str);
+	}
+}
+
+add_child :: inline (parent: *AstNode, child: *AstNode) {
+	child.parent = parent;
+	if parent.last_child then parent.last_child.next_sibling = child;
+	else parent.first_child = child;
+	parent.last_child = child;
+}
+
+make_node :: inline (kind: NodeKind, parent: *AstNode = null) -> *AstNode {
+	node := New(AstNode,, a);
+	node.kind = kind;
+	if parent then add_child(parent, node);
+	return node;
+}
+
+escape_for_html :: (text: string) -> string {
+	sb: String_Builder;
+	doc := text;
+	while doc.count > 0 {
+		if doc[0] == {
+			case "&"; append(*sb, "&amp;");
+			case "<"; append(*sb, "&lt;");
+			case ">"; append(*sb, "&gt;");
+			case "\""; append(*sb, "&quot;");
+			case "'"; append(*sb, "&#39;");
+			case; append(*sb, doc[0]);
+		}
+		advance(*doc);
+	}
+
+	return builder_to_string(*sb);
+}
+
+get_indent :: inline (s: string) -> indent: int, rest: string {
+	indent := 0;
+	str := s;
+	while str.count > 0 {
+		if str[0] == " " {
+			indent += 1;
+			advance(*str);
+		} else if str[0] == "\t" {
+			indent += 4;
+			advance(*str);
+		} else {
+			break;
+		}
+	}
+
+	return indent, str;
+}
+
+
 parse_blocks :: (document: string) -> *AstNode {
 	if document.count == 0 then return null;
 
@@ -234,14 +389,9 @@ parse_blocks :: (document: string) -> *AstNode {
 			thematic_break := make_node(.ThematicBreak, parent=root);
 		}else if !is_newline(doc[0]) {
 			par_node := make_node(.Paragraph, parent=root);
+			par_content := doc;
 			while doc.count > 0 {
-				line := doc;
 				advance_to_newline(*doc);
-				line.count -= doc.count;
-
-				text_node := make_node(.Text, parent=par_node);
-				text_node.content = trim(line);
-
 				if doc.count > 0 {
 					peek := doc;
 					// Skip the \n
@@ -253,6 +403,9 @@ parse_blocks :: (document: string) -> *AstNode {
 					advance(*doc);
 				}
 			}
+			par_content.count -= doc.count;
+			text_node := make_node(.Text, parent=par_node);
+			text_node.content = par_content;
 		}
 
 		skip_line(*doc);
@@ -262,33 +415,45 @@ parse_blocks :: (document: string) -> *AstNode {
 }
 
 parse_inline :: (node: *AstNode) {
-	if node.kind == .Text {
+	parent_is_code := ifx node.parent && node.parent.kind == .CodeBlock then true else false;
+	if node.kind == .Text && !parent_is_code {
 		doc := node.content;
 		while doc.count > 0 {
 			is_strong := starts_with(doc, "**");
 			is_em := doc[0] == "_";
 			is_code := doc[0] == "`";
 			if is_strong || is_em || is_code {
+				start_doc := doc;
 				kind := ifx is_strong then NodeKind.Strong else ifx is_em then NodeKind.Emphasis else ifx is_code then NodeKind.CodeInline;
 				node.content.count -= doc.count;
 				advance(*doc, ifx is_strong then 2 else 1);
 				content := doc;
-				if is_strong while !starts_with(doc, "**") advance(*doc);
-				if is_em while doc[0] != "_" advance(*doc);
-				if is_code while doc[0] != "`" advance(*doc);
-				content.count -= doc.count;
-				advance(*doc, ifx is_strong then 2 else 1);
-
-				parent_node := make_node(kind, parent=node.parent);
-				text_node := make_node(.Text, parent=parent_node);
-				text_node.content = content;
-
-				if doc.count > 0 {
-					rest_of_text_node := make_node(.Text, parent=node.parent);
-					rest_of_text_node.content = doc;
+				found_closing_symbol :=  false;
+				while doc.count > 0 {
+					if is_strong && starts_with(doc, "**") || is_em && doc[0] == "_" || is_code && doc[0] == "`" {
+						found_closing_symbol = true;
+						break;
+					}
+					advance(*doc);
 				}
 
-				break;
+				if found_closing_symbol {
+					content.count -= doc.count;
+					advance(*doc, ifx is_strong then 2 else 1);
+
+					parent_node := make_node(kind, parent=node.parent);
+					text_node := make_node(.Text, parent=parent_node);
+					text_node.content = content;
+
+					if doc.count > 0 {
+						rest_of_text_node := make_node(.Text, parent=node.parent);
+						rest_of_text_node.content = doc;
+					}
+
+					break;
+				}
+
+				doc = start_doc;
 			} else if doc[0] == "[" || (doc.count > 1 && starts_with(doc, "![")) {
 				is_image := doc[0] == "!";
 				start_doc := doc;
@@ -341,32 +506,56 @@ parse_inline :: (node: *AstNode) {
 
 				doc = start_doc;
 			} else if doc[0] == "<" {
+				start_doc := doc;
 				node.content.count -= doc.count;
-				html_block := make_node(.HtmlInline, parent=node.parent);
 				html_string := doc;
 
 				advance(*doc);
 				tag := doc;
-				while doc[0] != ">" && !is_space(doc[0]) advance(*doc);
-				tag.count -= doc.count;
-				open_count := 1;
-				while doc.count > 0 && open_count > 0 {
-					if starts_with(doc, tprint("<%>", tag)) open_count += 1;
-					if starts_with(doc, tprint("</%>", tag)) open_count -= 1;
+				found_open_tag_closing_chevron := false;
+				while doc.count > 0 {
+					found_open_tag_closing_chevron = doc[0] == ">";
+					if found_open_tag_closing_chevron || is_space(doc[0]) {
+						tag.count -= doc.count;
+						break;
+					}
+
 					advance(*doc);
 				}
-				while doc[0] != ">" advance(*doc);
-				advance(*doc);
 
-				html_string.count -= doc.count;
-				html_block.content = html_string;
+				if found_open_tag_closing_chevron {
+					open_count := 1;
+					while doc.count > 0 && open_count > 0 {
+						if starts_with(doc, tprint("<%>", tag)) open_count += 1;
+						if starts_with(doc, tprint("</%>", tag)) open_count -= 1;
+						advance(*doc);
+					}
 
-				if doc.count > 0 {
-					rest_of_text_node := make_node(.Text, parent=node.parent);
-					rest_of_text_node.content = doc;
+					foud_close_tag_closing_chevron := false;
+					while doc.count > 0 {
+						if doc[0] == ">" {
+							foud_close_tag_closing_chevron = true;
+							advance(*doc);
+							break;
+						}
+
+						advance(*doc);
+					}
+					if foud_close_tag_closing_chevron {
+						html_string.count -= doc.count;
+						html_block := make_node(.HtmlInline, parent=node.parent);
+						html_block.content = html_string;
+
+						if doc.count > 0 {
+							rest_of_text_node := make_node(.Text, parent=node.parent);
+							rest_of_text_node.content = doc;
+						}
+
+						break;
+					}
 				}
 
-				break;
+				doc = start_doc;
 			}
 			advance(*doc);
 		}
@@ -377,149 +566,4 @@ parse_inline :: (node: *AstNode) {
 		parse_inline(child);
 		child = child.next_sibling;
 	}
-}
-
-emit_html :: (node: *AstNode) -> string {
-	if !node then return "";
-	sb: String_Builder;
-	closing_tag: string;
-
-	if node.kind == {
-		case .Document; // Do nothing
-		case .Heading;
-			print_to_builder(*sb, "<h%>", node.level);
-			closing_tag = tprint("</h%>", node.level);
-		case .Paragraph;
-			append(*sb, "<p>");
-			closing_tag = "</p>";
-		case .Blockquote;
-			append(*sb, "<blockquote>");
-			closing_tag = "</blockquote>";
-		case .BulletList;
-			append(*sb, "<ul>");
-			closing_tag = "</ul>";
-		case .NumberList;
-			append(*sb, "<ol>");
-			closing_tag = "</ol>";
-		case .ListItem;
-			append(*sb, "<li>");
-			closing_tag = "</li>";
-		case .CodeBlock;
-			print_to_builder(*sb, "<pre><code class=\"language-%\">", node.content);
-			closing_tag = "</code></pre>";
-		case .ThematicBreak;
-			append(*sb, "<hr/>");
-			closing_tag = "";
-		case .HtmlInline; #through;
-		case .HtmlBlock;
-			append(*sb, node.content);
-			closing_tag = "";
-		case .Text;
-			append(*sb, escape_for_html(node.content));
-			if node.next_sibling && node.next_sibling.kind == .Text then append(*sb, " ");
-		case .Strong;
-			append(*sb, "<strong>");
-			closing_tag = "</strong>";
-		case .Emphasis;
-			append(*sb, "<em>");
-			closing_tag = "</em>";
-		case .CodeInline;
-			append(*sb, "<code>");
-			closing_tag = "</code>";
-		case .Link;
-			print_to_builder(*sb, "<a href=\"%\">", node.content);
-			closing_tag = "</a>";
-		case .Image;
-			print_to_builder(*sb, "<img src=\"%\" alt=\"", node.content);
-			closing_tag = "\" />";
-		case;
-			log_error("Unhandled case in the html emitter : %", node.*);
-	}
-
-	child := node.first_child;
-	while child {
-		append(*sb, emit_html(child));
-		child = child.next_sibling;
-	}
-
-	append(*sb, closing_tag);
-
-	return builder_to_string(*sb);
-}
-
-#scope_module
-
-#import "Basic";
-#import "Flat_Pool";
-#import "String";
-
-List_Level :: struct {
-	list_node: *AstNode;
-	last_item: *AstNode;
-	indent: int;
-}
-
-pool: Flat_Pool;
-a: Allocator;
-
-MAX_SUBLISTS_COUNT :: 16;
-
-is_newline :: inline (c: u8) -> bool {
-	return c == "\n";
-}
-
-advance_to_newline :: inline (str: *string) {
-	while str.count > 0 && !is_newline(str.*[0]) advance(str);
-}
-
-// advance_to_empty_line :: inline (str: *string) {
-// 	while str.count > 1 && !is_newline(str.*[0]) && !is_newline(str.*[1]) advance(str);
-// 	advance(str);
-// }
-
-skip_line :: inline (str: *string) {
-	if str.count == 0 then return;
-	c := str.*[0];
-	advance(str);
-	while str.count > 0 && !is_newline(c) {
-		c = str.*[0];
-		advance(str);
-	}
-}
-
-add_child :: inline (parent: *AstNode, child: *AstNode) {
-	child.parent = parent;
-	if parent.last_child then parent.last_child.next_sibling = child;
-	else parent.first_child = child;
-	parent.last_child = child;
-}
-
-make_node :: inline (kind: NodeKind, parent: *AstNode = null) -> *AstNode {
-	node := New(AstNode,, a);
-	node.kind = kind;
-	if parent then add_child(parent, node);
-	return node;
-}
-
-escape_for_html :: (text: string) -> string {
-	// TODO
-	return text;
-}
-
-get_indent :: inline (s: string) -> indent: int, rest: string {
-	indent := 0;
-	str := s;
-	while str.count > 0 {
-		if str[0] == " " {
-			indent += 1;
-			advance(*str);
-		} else if str[0] == "\t" {
-			indent += 4;
-			advance(*str);
-		} else {
-			break;
-		}
-	}
-
-	return indent, str;
 }

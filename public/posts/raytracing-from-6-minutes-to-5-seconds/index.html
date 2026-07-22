@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Raytracing: From 6 minutes to 5 seconds - Fabian Huber</title>
+		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/">About</a></li>
+				</ul>
+			</nav>
+		</header>
+
+<main>
+	<article>
+		<header>
+			<h1>Raytracing: From 6 minutes to 5 seconds</h1>
+			<p class="date">2023-4-11</p>
+		</header>
+		<p>During the second module of the second year at SAE Institute, we had to do a project in a naive way, that we would then optimize.</p><p>Since I enjoy computer graphics, I decided to follow <a href="https://raytracing.github.io/books/RayTracingInOneWeekend.html">Ray Tracing in One Weekend</a> written by Peter Shirley.
+And since I also enjoy Rust, it&#39;s the language I chose for this project.
+Although there are some Rust specific stuff, most of the optimizations can be applied in any programming language, so don&#39;t be scared if you don&#39;t know any Rust.</p><p>You can see the code on this repo : https://github.com/St0wy/raytracing/</p><h2>The project</h2><p>When optimizing, it can be sometimes a good idea to change what the program does.
+For example, you could reduce the number of objects in a scene, so that it can be computed faster.
+In this case, I wanted to keep the image intact.
+The goal was to have the same image before and after the optimizations.</p><p>To make this possible, I decided on four scenes that would showcase the different features of the raytracer and how some optimizations could impact different cases.</p><p>They are all rendered on a 400x400 image with 200 samples per pixel and a ray depth of 30.</p><p>Here are all of the scenes :</p><h3>Three Spheres</h3><p>This is a scene with three spheres, that are all of a different material.
+From front to back :</p><ol><li>Dielectric (glass)</li><li>Metalic</li><li>Lambertian (diffuse)</li></ol><p><img src="/assets/images/raytracing-optimizations/three-spheres.png" alt="Scene with three spheres" /></p><h3>Big Scene</h3><p>A big scene with a lot of spheres (~400, some are outside of the camera) of different materials. The one on the ground has a checker texture.</p><p>The blurry spheres on the front are here to simulate motion blur.
+It&#39;s like they&#39;re moving while the picture is being taken.</p><p><img src="/assets/images/raytracing-optimizations/big-scene.png" alt="big raytraced scene with hundreds of balls" /></p><h3>Cornell Box</h3><p>This is an image that is often reproduced to try the capacites of the lighting simulation of a renderer.
+It&#39;s a nice test to see the reflexion of the green wall onto the white box.
+Usually the boxes are rotated, but I didn&#39;t implement that in my renderer.</p><p><img src="/assets/images/raytracing-optimizations/cornell-box.png" alt="Raytraced image of the cornell box" /></p><h3>Perlin and Earth</h3><p>In this image, there is a big sphere as the ground, that has a perlin noise texture.
+The sphere on top has an image texture of the earth.</p><p><img src="/assets/images/raytracing-optimizations/perlin-and-earth.png" alt="image of a sphere with perlin noise texture and above it a sphere with a texture that looks like the earth" /></p><h2>Naive Implementation</h2><p>To have a base to compare to, I will show you the time it take to run each scene :</p><table>
+	<thead>
+		<tr>
+			<th>Three Spheres</th>
+			<th>Big Scene</th>
+			<th>Cornell Box</th>
+			<th>Perlin and Earth</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>3624,3 ms</td>
+			<td>405330 ms</td>
+			<td>35313 ms</td>
+			<td>18502 ms</td>
+		</tr>
+	</tbody>
+</table><p>(This is measured on my laptop, with an 8 core AMD Ryzen 9 5900HS at 3.30 GHz and 24.0 GB of RAM)</p><p>I measured these using the <a href="https://github.com/bheisler/criterion.rs">Criterion.rs</a> benchmarking library.</p><p>In this case, the project is implemented as an almost exact copy of the c++ code provided, but translated in Rust.</p><p>As you can see, there is a big hit on performance from the amount of objects in the big scene. We&#39;ll see how we can reduce that with the first optimization.</p><h2>Data Oriented</h2><h3>What&#39;s Data Oriented Programming</h3><p>If you&#39;re not sure what <a href="https://blog.klipse.tech/databook/2020/09/25/data-book-chap0.html">Data Oriented Programming</a> means, I will try to summarize it for you.</p><p>It&#39;s basically centered around the idea that the way the data is layed out in your memory, can (and will) impact performance.</p><p>When you code in a data oriented way, one of the things that you try to do is having as much data as possible that&#39;s contiguous.
+For example if you have an array of objects that you want to process, you try to avoid having an array of pointers to these objects, but instead you use an array to these objects.</p><blockquote><p>But this will ruin inheritence !</p></blockquote><p>Yes ! That&#39;s the point !
+Since inheritence makes you go through a <a href="https://stackoverflow.com/a/3004555/12330678">v-table</a>, it has an heavy impact on performances.</p><blockquote><p>So you&#39;re telling that you remove inheritance, but I thought that Rust didn&#39;t have inheritance ?</p></blockquote><p>Well, kinda. You can&#39;t inherit from an other struct in Rust. Structs can only implement traits.
+But, you can have a vector of the equivalent of an unique pointer in c++ of traits.</p><pre><code class="language-cpp">// C++
+std::vector&lt;std::unique_ptr&lt;Hittable&gt;&gt; hittables;</code></pre><pre><code class="language-rust">// rust
+let hittables: Vec&lt;Box&lt;dyn Hittable&gt;&gt;;</code></pre><p>Since Rust wants to make it obvious when you have a cost in its abstractions, it asks you to add the <code>dyn</code> keyword.
+It stands for &quot;dynamic dispatch&quot;, which is the process by which it&#39;s going to get the correct object.</p><h3>Implementation</h3><blockquote><p>Okay, so now how do you have multiple <code>Hittable</code> types ?</p></blockquote><p>Well, this is kind of the ugly part. The way I implemented it in my code, is by having multiple vectors.</p><pre><code class="language-rust">let spheres: Vec&lt;Sphere&gt;;
+let moving_sphere: Vec&lt;MovingSphere&gt;;</code></pre><p>This makes it so that I must add quite a lot of boilerplate when I add a new object, but the speed improvement is hopefully worth it.
+There may be a better way to implement it, but in my case the program was small enough that it wasn&#39;t worth the effort to investigate this further.</p><h3>Speed</h3><p>So, does it really improve performance ?
+Well let&#39;s look at the benchmark results.</p><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Naive</strong></td><td>3624,3 ms</td><td>405330 ms</td><td>35313 ms</td><td>18502 ms</td></tr><tr><td><strong>Data Oriented</strong></td><td>3682,6 ms</td><td>282410 ms</td><td>33221 ms</td><td>18627 ms</td></tr></tbody></table><p>As you can see there, for the scenes where there aren&#39;t that many objects, it has a tendency to be slower (at most 1.6%).
+But for the scene with a lot of objects, there is a 30% increase in speed !
+So if the objective is to have a lot of objects, this is the right path.</p><h2>Boundary Volume Heirarchy</h2><p>This point is actually covered in <a href="https://raytracing.github.io/books/RayTracingTheNextWeek.html#boundingvolumehierarchies">Ray Tracing: The Next Week</a>, so I&#39;m not going to go in details on what it is and how it works.
+I will explain how I implemented it in a data oriented way though !</p><p>The basic idea is that we divide the world in a binary tree where each node has an AABB (axis aligned bounding box) that surrounds every objects that&#39;s a child of it.
+This alows to greaty speed up the collision check rays, since we don&#39;t have to check agaisnt every object in the scene.</p><h3>Implementation</h3><p>So, as I said beffore, the truth is a bit ugly when it comes to my data oriented code, but here is the idea of how I implemented it.</p><p>So each nodes need to have either a pointer to a node, or to one of the types that can be rendered.</p><p>For this, I decided to have a type that would be an index to a hittable object.
+This type has an index in the array of the object and an enum that say which type it is.
+The BVH node then has two of these objects for its children.</p><pre><code class="language-rust">pub enum HittableObjectType {
+    Sphere,
+    MovingSphere,
+    XyRectangle,
+    XzRectangle,
+    YzRectangle,
+    AabbBox,
+    BvhNode,
+}
+
+pub struct HittableObjectIndex {
+    pub object_type: HittableObjectType,
+    pub index: usize,
+}
+
+pub struct BvhNode {
+    left: HittableObjectIndex,
+    right: HittableObjectIndex,
+    aabb: Aabb,
+}</code></pre><p>And then there is a recursive method that traverses the array of BVH nodes.
+The first node of this array is always the root of the scene.</p><h3>Speed</h3><p>So, did this really bring any speedups ?</p><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Data Oriented</strong></td><td>3682,6 ms</td><td>282410 ms</td><td>33221 ms</td><td>18627 ms</td></tr><tr><td><strong>BVH</strong></td><td>4668,2 ms</td><td>55679 ms</td><td>46857 ms</td><td>19210 ms</td></tr></tbody></table><p>Well, this is where we say &quot;it depends&quot;.
+Although the big scene has an 80% speedup, the cornell box is 41% slower and the three spheres are 26% slower.</p><p>So again, if we wanted to render small scenes, this would not be a good idea, but for big scenes, it is. The BVH is kept for subsequent tests, but in a more real use case, it would be pertinent to wonder how the project would be used.</p><h2>Multithreading</h2><p>At the end of &quot;Ray Tracing in One Weekend&quot;, one of the exercises left to the reader is to multithread the raytracer. This is where we do that !</p><h3>Implementation</h3><p>Thanks to Rust&#39;s <a href="https://doc.rust-lang.org/book/ch16-00-concurrency.html">Fearless Concurrency</a> and the crate <a href="https://github.com/rayon-rs/rayon">Rayon</a> this was extremly easy to do !</p><p>Inside of my render function, I replaced the for loop to a <code>flat</code> call on a range.
+I could then call Rayon&#39;s <code>into<em>par</em>iter()</code> on the range, to convert the iterator to a parallel iterator and boom, multithreading !</p><pre><code class="language-rust">pub fn render(scene: &amp;Scene, image_width: usize, image_height: usize) -&gt; Vec&lt;u8&gt; {
+    (0..image_height)
+        .into_par_iter()
+        .rev()
+        .flat_map(|j| {
+            // Do something...
+        }).collect()
+}</code></pre><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>BVH</strong></td><td>4668,2 ms</td><td>55679 ms</td><td>46857 ms</td><td>19210 ms</td></tr><tr><td><strong>Multithreading</strong></td><td>550,87 ms</td><td>7631,3 ms</td><td>5421,2 ms</td><td>2032,8 ms</td></tr></tbody></table><p>As you can see, it&#39;s quite a bit faster !
+All of the scenes run between 86,29% and 89,42% faster.</p><p>And there isn&#39;t a big difference between scenes,
+which makes sense since we&#39;re not changing how each pixel is processed, but we&#39;re now computing each pixels in parallel.</p><h2>No Recurse</h2><p>This title is a bit of a lie, since I&#39;m not really getting rid of all recursive function call in the program.</p><p>This is mostly about a specific function, that handle the computation of the color of a ray.
+This is tricky since the ray has to bounce multiple times on the objects until it has a credible color.
+One naive way of implementing it is by having a recursive function, that calls itself with a limit (the ray depth).</p><p>The problem with this, is that it can be quite tricky for a compiler to optimize a recursive function.</p><p>Luckily, in our case, we can change this by using a loop.</p><h3>Implementation</h3><p>So the old function looked like this :</p><pre><code class="language-rust">
+fn ray_color(
+    ray: &amp;Ray,
+    background_color: &amp;Color,
+    hittable_world: &amp;HittableWorld,
+    depth: u32,
+) -&gt; Color {
+    if depth == 0 {
+        return Color::black();
+    }
+
+    let record = hittable_world.hit_no_limit(ray);
+
+    if record.is_none() {
+        return *background_color;
+    }
+    let record = record.unwrap();
+
+    let emitted = record
+        .material()
+        .emit(record.u(), record.v(), record.point());
+
+    let scatter = record.material().scatter(ray, &amp;record);
+    if scatter.is_none() {
+        return emitted;
+    }
+    let scatter_result = scatter.unwrap();
+
+    let ray_color = ray_color(
+        &amp;scatter_result.scattered,
+        background_color,
+        hittable_world,
+        depth - 1,
+    );
+
+    emitted + scatter_result.attenuation * ray_color
+}</code></pre><p>We can see that we shoot a ray, if we don&#39;t hit anything or don&#39;t have any scatter, we return. Otherwise, we compute ray color once again and multiply it to emitted + attenuation.</p><p>The non-recursive version looks like :</p><pre><code class="language-rust">fn ray_color(
+    mut ray: Ray,
+    background_color: &amp;Color,
+    hittable_list: &amp;HittableWorld,
+    rng: &amp;mut impl RngCore,
+) -&gt; Color {
+    let mut color = Color::white();
+    let mut emitted = Color::black();
+
+    for _ in 0..MAX_DEPTH {
+        let record = hittable_list.hit_no_limit(&amp;ray);
+
+        if record.is_none() {
+            return *background_color * color;
+        }
+        let record = record.unwrap();
+        let emit = record
+            .material()
+            .emit(record.u(), record.v(), record.point());
+        emitted += color * emit;
+
+        let scatter = record.material().scatter(&amp;ray, &amp;record, rng);
+        if scatter.is_none() {
+            return emitted;
+        }
+
+        let scatter = scatter.unwrap();
+        color *= scatter.attenuation;
+        ray = scatter.scattered;
+
+        if color.dot(&amp;color) &lt; 0.0001 {
+            return emitted;
+        }
+    }
+
+    emitted
+}</code></pre><p>In this case there&#39;s a loop that does the &quot;recursion&quot;.
+We also have two colors we store outside of the loop (color and emitted) and we declare the ray as muttable so we can modify it to be the value of the next ray to process.</p><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Multithreading</strong></td><td>550,87 ms</td><td>7631,3 ms</td><td>5421,2 ms</td><td>2032,8 ms</td></tr><tr><td><strong>No Recursion</strong></td><td>549,23 ms</td><td>7584,4 ms</td><td>4141,5 ms</td><td>1694,8 ms</td></tr></tbody></table><p>As we can see, in this case there isn&#39;t a big difference for the three spheres and the big scene.
+But suprisingly, there&#39;s a 23,61% speed increase for the cornell box and 16,63% for the perlin and earth scene.</p><p>I don&#39;t really know why this is. My guess is that when rendering an image that has lighting or that&#39;s heavilly based on textures, this change matters a lot.</p><h2>Glam</h2><p>Up until now, the program used a homemade vector type.
+This can work, and did until now, but I wasn&#39;t using all of the tool possible to make it as fast as possible.
+One of these are <a href="https://en.wikipedia.org/wiki/Single_instruction,_multiple_data">SIMD</a>.
+Although a vector 3 doesn&#39;t quite fit in an SSE register, if you add padding it does. It&#39;s possible to then use the SIMD instructions for additions, mutliplicatiosn etc.</p><h3>Implementation</h3><p>Since I didn&#39;t want to spend too much time on this, I decided to use the <a href="https://crates.io/crates/glam">Glam</a> library. Also, the library author probably did a better job than I ever could.</p><p>Once the library was added to the project, I replaced every usage of the old <code>Vec3</code>, by Glam&#39;s <code>Vec3A</code>.
+This is the type that adds padding and can profit of SIMD.</p><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>No Recursion</strong></td><td>549,23 ms</td><td>7584,4 ms</td><td>4141,5 ms</td><td>1694,8 ms</td></tr><tr><td><strong>Glam</strong></td><td>500,61 ms</td><td>7590,2 ms</td><td>3683,3 ms</td><td>1469,7 ms</td></tr></tbody></table><p>Appart from the big scene, this change brings an improvement between 8,85% and 13,28%.</p><p>My guess from the big scene is that the cost in this case is mostly the BVH traversal rather than the math computation.</p><h2>Faster Random</h2><p>In this implementation of the raytracer, it&#39;s often needed to get a random value.
+For example, when a ray is shot, it&#39;s moved in a random direction for the <a href="https://en.wikipedia.org/wiki/Spatial_anti-aliasing">anti-aliasing</a> effect.</p><p>Rust doesn&#39;t have random number generation, this means that you have to use a library for that.
+The &quot;default&quot; one is the <a href="https://crates.io/crates/rand">rand</a> crate.
+With it, you can get a random number generator using the <code>thread</code> function :</p><pre><code class="language-rust">use rand::prelude::*;
+
+let rng = thread_rng();
+let num: u8 = rng.gen();</code></pre><p>And since Rust is focused on safety, the default RNG is cryptographically secure, which means that it&#39;s hard to predict the next number based on previously generated numbers.
+The problem with this is that it generally makes the generator slower.
+And since in our case we don&#39;t need to be cryptographically secure, we could use an other generator that is faster.</p><h3>Implementation</h3><p>So how to we replace it ?
+Well sadly we can&#39;t just replace the RNG supplied by <code>thread</code>.
+This means I had to manually create the generators in each thread and then supply a mutable reference to them to each part of the program that needs it.</p><p>After reading about the different generators on <a href="https://rust-random.github.io/book/guide-rngs.html#basic-pseudo-random-number-generators-prngs">The Rust Rand Book</a>, I decided to use the <code>Xoshiro256Plus</code> generator.
+For this I had to add the crate <code>rand</code> to the project.</p><p>In case I want to use a faster generator in the future, the mutable reference is passed using the <code>RngCore</code> trait which the base interface of all generators.</p><pre><code class="language-rust">fn ray_color(
+    mut ray: Ray,
+    background_color: &amp;Color,
+    hittable_list: &amp;HittableWorld,
+    rng: &amp;mut impl RngCore,
+) -&gt; Color {...}</code></pre><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Glam</strong></td><td>500,61 ms</td><td>7590,2 ms</td><td>3683,3 ms</td><td>1469,7 ms</td></tr><tr><td><strong>Faster Random</strong></td><td>485,97 ms</td><td>7418,7 ms</td><td>3239,9 ms</td><td>1386,8 ms</td></tr></tbody></table><p>The improvement is not a big one, but we do get an improvement between 2,26% and 12,04%.</p><h2>Compilation Flags</h2><p>What if we could not change the code at all and make it run faster ?
+Well, we can !</p><p>Although compiling in release already makes the code a lot faster, there are other tweaks that can be done to make the code faster.
+Most of them are described in <a href="https://nnethercote.github.io/perf-book/build-configuration.html">The Rust Performance Book</a>.</p><p>You can read the book if you want to know more, but here is a quick summary of each options :</p><ul><li>LTO (Link-time Optimization) : Adds optimizations when the program is getting linked</li><li>Codegen Units : By default the Rust compiler tries to parallelize the compilation of your code. You can force it to only use one codegen unit so that it can find more optimizations.</li><li>CPU Specific Instructions : You can tell the program to compile for the current architecture to potentially use more modern instructions that could be faster.</li><li>Abort on <code>panic!</code> : Rust doesn&#39;t have exceptions, but it does have a panics, that can be catched. If you don&#39;t catch them, you can disable it to gain some performance.</li></ul><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Faster Random</strong></td><td>485,97 ms</td><td>7418,7 ms</td><td>3239,9 ms</td><td>1386,8 ms</td></tr><tr><td><strong>Compiler Flags</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table><p>This doesn&#39;t change much for the cornell box (3,73% faster) but for the big scene it&#39;s 20,84% faster !</p><h2>Conclusion</h2><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Naive</strong></td><td>3624,3 ms</td><td>405330 ms</td><td>35313 ms</td><td>18502 ms</td></tr><tr><td><strong>Optimized version</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table><p>That&#39;s quite a big leap in performances !
+Let&#39;s look at it in a more visual way.</p><p><img src="/assets/images/raytracing-optimizations/graph1.png" alt="Graph of the performance improvements" /></p><p>We can&#39;t see much after the multithreading, so let&#39;s zoom in a bit.</p><p><img src="/assets/images/raytracing-optimizations/graph2.png" alt="Graph of the performance improvement" /></p><p>And that&#39;s it for the optimizations !
+It&#39;s not quite real-time, the GPU might be needed for that. And there are probably other ways to improve the project, such as having a better way to handle the BVH.</p><p>Thanks for reading !</p>
+	</article>
+</main>
+<footer>© 2026 Fabian Huber</footer>
+<!--<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+	mediumZoom('p img', {
+		margin: 24,
+		background: '#000000CC'
+	})
+</script>-->
+
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+<script>
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('p img');
+
+	// Loop through all images and add a click event
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src; // Copy the clicked image's source
+			lightbox.style.display = 'block'; // Show the lightbox
+		});
+	});
+
+	// Close the lightbox when clicking anywhere on it
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = ""; // Clear out the source
+	});
+</script>
+</body>
+</html>

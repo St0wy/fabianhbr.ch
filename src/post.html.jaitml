@@ -1,0 +1,15 @@
+<?jai
+include("header.jaitml");
+post := posts[POST_INDEX];
+?>
+
+<main>
+	<article>
+		<header>
+			<h1><?jai echo("%", post.title); ?></h1>
+			<p class="date"><?jai echo("%-%-%", post.pub_date_time.year, post.pub_date_time.month_starting_at_0 + 1, post.pub_date_time.day_of_month_starting_at_0 + 1); ?></p>
+		</header>
+		<?jai echo("%", post.html); ?>
+	</article>
+</main>
+<?jai include("footer.jaitml"); ?>

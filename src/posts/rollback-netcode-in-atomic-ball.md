@@ -2,12 +2,7 @@
 title: Rollback Netcode in Atomic Ball
 slug: rollback-netcode-in-atomic-ball
 pubDatetime: 2022-10-31
-featured: false
-tags:
-    - netcode
-    - cpp
-    - english
-    - sae
+tags: netcode, cpp, english, sae
 description: Technical post on how I used the Rollback engine of my teacher in the game Atomic Ball
 ---
 
@@ -18,7 +13,7 @@ During the Networking module of the SAE Institute, we had to create an online ga
 
 The game I chose to make was one that my team made during the Swiss Game Academy 2019.
 
-![atomicBall2](/src/assets/images/atomic-ball-rollback/atomicBall2.png)
+![atomicBall2](/assets/images/atomic-ball-rollback/atomicBall2.png)
 
 The goal of the game is to pass a ball between the two players to be able to go forward.
 Doors fall from the top that you have to break to go through.
@@ -26,7 +21,7 @@ To do that, you have to go through doors, but some require that you have the bal
 
 <video width="640" height="480" loop muted autoplay>
 	<source
-		src="/atomic-ball-rollback/atomicDemo.mp4"
+		src="/assets/images/atomic-ball-rollback/atomicDemo.mp4"
 		type="video/mp4"
 	></source>
 	Your browser does not support the video tag.
@@ -40,7 +35,7 @@ The first step of the project was to integrate our [physics engine](https://gith
 
 The cause of this was that the response of the collisions would send the object inside the wall and once it would start to go out on the other side, it would be sent in the opposite direction, making the object stuck inside the wall.
 
-![BadPhysics](/src/assets/images/atomic-ball-rollback/BadPhysics.excalidraw.png)
+![BadPhysics](/assets/images/atomic-ball-rollback/BadPhysics.excalidraw.png)
 
 This is a weird problem since in my project with the original physics engine, the collision response has the correct orientation.
 
@@ -126,7 +121,7 @@ So the idea is that there is a first entity, the background wall, that is here t
 
 Then, there is the door, which also has the Falling Object component, but also a Falling Door component. This one stores the background wall and also whether the player should have the ball or not to cross the door. When a player has a collision with the door, if it meets the ball requirements, the door is destroyed along with the background wall.
 
-![FallingWalls](/src/assets/images/atomic-ball-rollback/FallingWalls.excalidraw.png)
+![FallingWalls](/assets/images/atomic-ball-rollback/FallingWalls.excalidraw.png)
 
 ## Spawn of the falling walls
 

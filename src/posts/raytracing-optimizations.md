@@ -1,14 +1,8 @@
 ---
-title: "Raytracing : From 6 minutes to 5 seconds"
-postSlug: raytracing-from-6-minutes-to-5-seconds
+title: Raytracing: From 6 minutes to 5 seconds
+slug: raytracing-from-6-minutes-to-5-seconds
 pubDatetime: 2023-04-11
-featured: true
-tags:
-    - optimization
-    - raytracing
-    - rust
-    - english
-    - sae
+tags: optimization, raytracing, rust, english, sae
 description: Technical blog post on how I optimized a Raytracer using various methods.
 ---
 
@@ -19,8 +13,6 @@ And since I also enjoy Rust, it's the language I chose for this project.
 Although there are some Rust specific stuff, most of the optimizations can be applied in any programming language, so don't be scared if you don't know any Rust.
 
 You can see the code on this repo : https://github.com/St0wy/raytracing/
-
-## Table of Contents
 
 ## The project
 
@@ -44,7 +36,7 @@ From front to back :
 2. Metalic
 3. Lambertian (diffuse)
 
-![Scene with three spheres](/src/assets/images/raytracing-optimizations/three-spheres.png)
+![Scene with three spheres](/assets/images/raytracing-optimizations/three-spheres.png)
 
 ### Big Scene
 
@@ -53,7 +45,7 @@ A big scene with a lot of spheres (~400, some are outside of the camera) of diff
 The blurry spheres on the front are here to simulate motion blur.
 It's like they're moving while the picture is being taken.
 
-![big raytraced scene with hundreds of balls](/src/assets/images/raytracing-optimizations/big-scene.png)
+![big raytraced scene with hundreds of balls](/assets/images/raytracing-optimizations/big-scene.png)
 
 ### Cornell Box
 
@@ -61,22 +53,37 @@ This is an image that is often reproduced to try the capacites of the lighting s
 It's a nice test to see the reflexion of the green wall onto the white box.
 Usually the boxes are rotated, but I didn't implement that in my renderer.
 
-![Raytraced image of the cornell box](/src/assets/images/raytracing-optimizations/cornell-box.png)
+![Raytraced image of the cornell box](/assets/images/raytracing-optimizations/cornell-box.png)
 
 ### Perlin and Earth
 
 In this image, there is a big sphere as the ground, that has a perlin noise texture.
 The sphere on top has an image texture of the earth.
 
-![image of a sphere with perlin noise texture and above it a sphere with a texture that looks like the earth](/src/assets/images/raytracing-optimizations/perlin-and-earth.png)
+![image of a sphere with perlin noise texture and above it a sphere with a texture that looks like the earth](/assets/images/raytracing-optimizations/perlin-and-earth.png)
 
 ## Naive Implementation
 
 To have a base to compare to, I will show you the time it take to run each scene :
 
-| Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ------------- | --------- | ----------- | ---------------- |
-| 3624,3 ms     | 405330 ms | 35313 ms    | 18502 ms         |
+<table>
+	<thead>
+		<tr>
+			<th>Three Spheres</th>
+			<th>Big Scene</th>
+			<th>Cornell Box</th>
+			<th>Perlin and Earth</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>3624,3 ms</td>
+			<td>405330 ms</td>
+			<td>35313 ms</td>
+			<td>18502 ms</td>
+		</tr>
+	</tbody>
+</table>
 
 (This is measured on my laptop, with an 8 core AMD Ryzen 9 5900HS at 3.30 GHz and 24.0 GB of RAM)
 
@@ -139,10 +146,7 @@ There may be a better way to implement it, but in my case the program was small 
 So, does it really improve performance ?
 Well let's look at the benchmark results.
 
-|                   | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ----------------- | ------------- | --------- | ----------- | ---------------- |
-| **Naive**         | 3624,3 ms     | 405330 ms | 35313 ms    | 18502 ms         |
-| **Data Oriented** | 3682,6 ms     | 282410 ms | 33221 ms    | 18627 ms         |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Naive</strong></td><td>3624,3 ms</td><td>405330 ms</td><td>35313 ms</td><td>18502 ms</td></tr><tr><td><strong>Data Oriented</strong></td><td>3682,6 ms</td><td>282410 ms</td><td>33221 ms</td><td>18627 ms</td></tr></tbody></table>
 
 As you can see there, for the scenes where there aren't that many objects, it has a tendency to be slower (at most 1.6%).
 But for the scene with a lot of objects, there is a 30% increase in speed !
@@ -196,10 +200,7 @@ The first node of this array is always the root of the scene.
 
 So, did this really bring any speedups ?
 
-|                   | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ----------------- | ------------- | --------- | ----------- | ---------------- |
-| **Data Oriented** | 3682,6 ms     | 282410 ms | 33221 ms    | 18627 ms         |
-| **BVH**           | 4668,2 ms     | 55679 ms  | 46857 ms    | 19210 ms         |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Data Oriented</strong></td><td>3682,6 ms</td><td>282410 ms</td><td>33221 ms</td><td>18627 ms</td></tr><tr><td><strong>BVH</strong></td><td>4668,2 ms</td><td>55679 ms</td><td>46857 ms</td><td>19210 ms</td></tr></tbody></table>
 
 Well, this is where we say "it depends".
 Although the big scene has an 80% speedup, the cornell box is 41% slower and the three spheres are 26% slower.
@@ -230,10 +231,7 @@ pub fn render(scene: &Scene, image_width: usize, image_height: usize) -> Vec<u8>
 
 ### Speed
 
-|                    | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ------------------ | ------------- | --------- | ----------- | ---------------- |
-| **BVH**            | 4668,2 ms     | 55679 ms  | 46857 ms    | 19210 ms         |
-| **Multithreading** | 550,87 ms     | 7631,3 ms | 5421,2 ms   | 2032,8 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>BVH</strong></td><td>4668,2 ms</td><td>55679 ms</td><td>46857 ms</td><td>19210 ms</td></tr><tr><td><strong>Multithreading</strong></td><td>550,87 ms</td><td>7631,3 ms</td><td>5421,2 ms</td><td>2032,8 ms</td></tr></tbody></table>
 
 As you can see, it's quite a bit faster !
 All of the scenes run between 86,29% and 89,42% faster.
@@ -346,10 +344,7 @@ We also have two colors we store outside of the loop (color and emitted) and we 
 
 ### Speed
 
-|                    | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ------------------ | ------------- | --------- | ----------- | ---------------- |
-| **Multithreading** | 550,87 ms     | 7631,3 ms | 5421,2 ms   | 2032,8 ms        |
-| **No Recursion**   | 549,23 ms     | 7584,4 ms | 4141,5 ms   | 1694,8 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Multithreading</strong></td><td>550,87 ms</td><td>7631,3 ms</td><td>5421,2 ms</td><td>2032,8 ms</td></tr><tr><td><strong>No Recursion</strong></td><td>549,23 ms</td><td>7584,4 ms</td><td>4141,5 ms</td><td>1694,8 ms</td></tr></tbody></table>
 
 As we can see, in this case there isn't a big difference for the three spheres and the big scene.
 But suprisingly, there's a 23,61% speed increase for the cornell box and 16,63% for the perlin and earth scene.
@@ -372,10 +367,7 @@ This is the type that adds padding and can profit of SIMD.
 
 ### Speed
 
-|                  | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ---------------- | ------------- | --------- | ----------- | ---------------- |
-| **No Recursion** | 549,23 ms     | 7584,4 ms | 4141,5 ms   | 1694,8 ms        |
-| **Glam**         | 500,61 ms     | 7590,2 ms | 3683,3 ms   | 1469,7 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>No Recursion</strong></td><td>549,23 ms</td><td>7584,4 ms</td><td>4141,5 ms</td><td>1694,8 ms</td></tr><tr><td><strong>Glam</strong></td><td>500,61 ms</td><td>7590,2 ms</td><td>3683,3 ms</td><td>1469,7 ms</td></tr></tbody></table>
 
 Appart from the big scene, this change brings an improvement between 8,85% and 13,28%.
 
@@ -423,10 +415,7 @@ fn ray_color(
 
 ### Speed
 
-|                   | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ----------------- | ------------- | --------- | ----------- | ---------------- |
-| **Glam**          | 500,61 ms     | 7590,2 ms | 3683,3 ms   | 1469,7 ms        |
-| **Faster Random** | 485,97 ms     | 7418,7 ms | 3239,9 ms   | 1386,8 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Glam</strong></td><td>500,61 ms</td><td>7590,2 ms</td><td>3683,3 ms</td><td>1469,7 ms</td></tr><tr><td><strong>Faster Random</strong></td><td>485,97 ms</td><td>7418,7 ms</td><td>3239,9 ms</td><td>1386,8 ms</td></tr></tbody></table>
 
 The improvement is not a big one, but we do get an improvement between 2,26% and 12,04%.
 
@@ -447,28 +436,22 @@ You can read the book if you want to know more, but here is a quick summary of e
 
 ### Speed
 
-|                    | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| ------------------ | ------------- | --------- | ----------- | ---------------- |
-| **Faster Random**  | 485,97 ms     | 7418,7 ms | 3239,9 ms   | 1386,8 ms        |
-| **Compiler Flags** | 409,45 ms     | 5872,5 ms | 3119 ms     | 1289,1 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Faster Random</strong></td><td>485,97 ms</td><td>7418,7 ms</td><td>3239,9 ms</td><td>1386,8 ms</td></tr><tr><td><strong>Compiler Flags</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table>
 
 This doesn't change much for the cornell box (3,73% faster) but for the big scene it's 20,84% faster !
 
 ## Conclusion
 
-|                       | Three Spheres | Big Scene | Cornell Box | Perlin and Earth |
-| --------------------- | ------------- | --------- | ----------- | ---------------- |
-| **Naive**             | 3624,3 ms     | 405330 ms | 35313 ms    | 18502 ms         |
-| **Optimized version** | 409,45 ms     | 5872,5 ms | 3119 ms     | 1289,1 ms        |
+<table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Naive</strong></td><td>3624,3 ms</td><td>405330 ms</td><td>35313 ms</td><td>18502 ms</td></tr><tr><td><strong>Optimized version</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table>
 
 That's quite a big leap in performances !
 Let's look at it in a more visual way.
 
-![Graph of the performance improvements](/src/assets/images/raytracing-optimizations/graph1.png)
+![Graph of the performance improvements](/assets/images/raytracing-optimizations/graph1.png)
 
 We can't see much after the multithreading, so let's zoom in a bit.
 
-![Graph of the performance improvement](/src/assets/images/raytracing-optimizations/graph2.png)
+![Graph of the performance improvement](/assets/images/raytracing-optimizations/graph2.png)
 
 And that's it for the optimizations !
 It's not quite real-time, the GPU might be needed for that. And there are probably other ways to improve the project, such as having a better way to handle the BVH.
