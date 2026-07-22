@@ -15,23 +15,18 @@ NodeKind :: enum u8 {
 
 // Inline
 	Text;
-	HtmlInline;
 	Strong;
 	Emphasis;
 	CodeInline;
 	Link;
 	Image;
+	HtmlInline;
 }
 
-Link :: struct {
-	url: string;
-	title: string;
-}
 NodeData :: union kind: NodeKind {
 	frontmatter: string;
 	level: u8;
 	content: string;
-	link: Link;
 }
 
 AstNode :: struct {
@@ -40,6 +35,12 @@ AstNode :: struct {
 	last_child: *AstNode;
 	next_sibling: *AstNode;
 	using data: NodeData;
+}
+
+parse :: (document: string) -> root: *AstNode {
+	root := parse_blocks(document);
+	parse_inline(root);
+	return root;
 }
 
 // document is the mardown file content with frontmatter if there is one
@@ -260,6 +261,124 @@ parse_blocks :: (document: string) -> *AstNode {
 	return root;
 }
 
+parse_inline :: (node: *AstNode) {
+	if node.kind == .Text {
+		doc := node.content;
+		while doc.count > 0 {
+			is_strong := starts_with(doc, "**");
+			is_em := doc[0] == "_";
+			is_code := doc[0] == "`";
+			if is_strong || is_em || is_code {
+				kind := ifx is_strong then NodeKind.Strong else ifx is_em then NodeKind.Emphasis else ifx is_code then NodeKind.CodeInline;
+				node.content.count -= doc.count;
+				advance(*doc, ifx is_strong then 2 else 1);
+				content := doc;
+				if is_strong while !starts_with(doc, "**") advance(*doc);
+				if is_em while doc[0] != "_" advance(*doc);
+				if is_code while doc[0] != "`" advance(*doc);
+				content.count -= doc.count;
+				advance(*doc, ifx is_strong then 2 else 1);
+
+				parent_node := make_node(kind, parent=node.parent);
+				text_node := make_node(.Text, parent=parent_node);
+				text_node.content = content;
+
+				if doc.count > 0 {
+					rest_of_text_node := make_node(.Text, parent=node.parent);
+					rest_of_text_node.content = doc;
+				}
+
+				break;
+			} else if doc[0] == "[" || (doc.count > 1 && starts_with(doc, "![")) {
+				is_image := doc[0] == "!";
+				start_doc := doc;
+				advance(*doc, ifx is_image 2 else 1);
+
+				link_text := doc;
+				found_closing_brackets := false;
+				while doc.count > 0 {
+					if doc[0] == "]" {
+						found_closing_brackets = true;
+						break;
+					}
+					advance(*doc);
+				}
+
+				if found_closing_brackets && doc.count > 1 && doc[1] == "(" {
+					link_text.count -= doc.count;
+					advance(*doc, 2);
+
+					link_url := doc;
+					found_closing_paren := false;
+					while doc.count > 0 {
+						if doc[0] == ")" {
+							found_closing_paren = true;
+							break;
+						}
+						advance(*doc);
+					}
+
+					if found_closing_paren {
+						link_url.count -= doc.count;
+						advance(*doc);
+
+						node.content.count -= start_doc.count;
+						kind := ifx is_image then NodeKind.Image else NodeKind.Link;
+						link_node := make_node(kind, parent=node.parent);
+						link_node.content = link_url;
+
+						link_text_node := make_node(.Text, parent=link_node);
+						link_text_node.content = link_text;
+
+						if doc.count > 0 {
+							rest_of_text_node := make_node(.Text, parent=node.parent);
+							rest_of_text_node.content = doc;
+						}
+
+						break;
+					}
+				}
+
+				doc = start_doc;
+			} else if doc[0] == "<" {
+				node.content.count -= doc.count;
+				html_block := make_node(.HtmlInline, parent=node.parent);
+				html_string := doc;
+
+				advance(*doc);
+				tag := doc;
+				while doc[0] != ">" && !is_space(doc[0]) advance(*doc);
+				tag.count -= doc.count;
+				open_count := 1;
+				while doc.count > 0 && open_count > 0 {
+					if starts_with(doc, tprint("<%>", tag)) open_count += 1;
+					if starts_with(doc, tprint("</%>", tag)) open_count -= 1;
+					advance(*doc);
+				}
+				while doc[0] != ">" advance(*doc);
+				advance(*doc);
+
+				html_string.count -= doc.count;
+				html_block.content = html_string;
+
+				if doc.count > 0 {
+					rest_of_text_node := make_node(.Text, parent=node.parent);
+					rest_of_text_node.content = doc;
+				}
+
+				break;
+			}
+			advance(*doc);
+		}
+	}
+
+	child := node.first_child;
+	while child {
+		parse_inline(child);
+		child = child.next_sibling;
+	}
+}
+
 emit_html :: (node: *AstNode) -> string {
 	if !node then return "";
 	sb: String_Builder;
@@ -291,12 +410,28 @@ emit_html :: (node: *AstNode) -> string {
 		case .ThematicBreak;
 			append(*sb, "<hr/>");
 			closing_tag = "";
+		case .HtmlInline; #through;
 		case .HtmlBlock;
 			append(*sb, node.content);
 			closing_tag = "";
 		case .Text;
 			append(*sb, escape_for_html(node.content));
-			if node.next_sibling then append(*sb, " ");
+			if node.next_sibling && node.next_sibling.kind == .Text then append(*sb, " ");
+		case .Strong;
+			append(*sb, "<strong>");
+			closing_tag = "</strong>";
+		case .Emphasis;
+			append(*sb, "<em>");
+			closing_tag = "</em>";
+		case .CodeInline;
+			append(*sb, "<code>");
+			closing_tag = "</code>";
+		case .Link;
+			print_to_builder(*sb, "<a href=\"%\">", node.content);
+			closing_tag = "</a>";
+		case .Image;
+			print_to_builder(*sb, "<img src=\"%\" alt=\"", node.content);
+			closing_tag = "\" />";
 		case;
 			log_error("Unhandled case in the html emitter : %", node.*);
 	}
