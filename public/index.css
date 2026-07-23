@@ -236,7 +236,7 @@ article img {
 	margin: 0;
 }
 
-table {
+article table {
 	margin: 1.5rem auto;
 	width: fit-content;
 	max-width: 100%;
@@ -248,7 +248,7 @@ table {
 	white-space: nowrap;
 }
 
-th {
+article th {
 	font-weight: 600;
 	padding: 0.6em 1em;
 	border-bottom: 2px solid #ccc;
@@ -256,37 +256,37 @@ th {
 	color: #111;
 }
 
-td {
+article td {
 	padding: 0.6em 1em;
 	border-bottom: 1px solid #e0e0e0;
 	color: #333;
 }
 
-tbody tr:nth-child(even) {
+article tbody tr:nth-child(even) {
 	background-color: #fafafa;
 }
 
-tbody tr:hover {
+article tbody tr:hover {
 	background-color: #f1f1f1;
 }
 
 @media (prefers-color-scheme: dark) {
-	th {
+	article th {
 		background-color: #222;
 		border-bottom-color: #444;
 		color: #fff;
 	}
 
-	td {
+	article td {
 		border-bottom-color: #333;
 		color: #e0e0e0;
 	}
 
-	tbody tr:nth-child(even) {
+	article tbody tr:nth-child(even) {
 		background-color: #181818;
 	}
 
-	tbody tr:hover {
+	article tbody tr:hover {
 		background-color: #252525;
 	}
 }
@@ -370,19 +370,19 @@ blockquote cite::before {
 }
 
 .project-card:hover {
-    text-decoration: none;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    border-color: var(--main-color);
+	text-decoration: none;
+	transform: translateY(-4px);
+	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+	border-color: var(--main-color);
 }
 
 .project-card img {
-    margin: 0;
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    border-bottom: 1px solid #e0e0e0;
-    display: block;
+	margin: 0;
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+	border-bottom: 1px solid #e0e0e0;
+	display: block;
 }
 
 .project-info {
@@ -423,8 +423,8 @@ blockquote cite::before {
 }
 
 .project-details {
-    display: flex;
-    align-items: center;
+	display: flex;
+	align-items: center;
 }
 
 svg {
@@ -432,12 +432,41 @@ svg {
 }
 
 .video {
-    width: 100%;
-    max-width: 100%;
-    aspect-ratio: 16 / 9;
-    height: auto;
-    margin: 2rem 0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: block;
+	width: 100%;
+	max-width: 100%;
+	aspect-ratio: 16 / 9;
+	height: auto;
+	margin: 2rem 0;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	display: block;
+}
+
+.gbt2 {
+	max-width: 800px;
+	margin: 0 0 0.5em;
+	padding: 0;
+	text-align: justify;
+}
+
+.gbt2 tr {
+	line-height: 1.1;
+	vertical-align: top;
+}
+
+.gbt2 tr td:first-child {
+	text-align: right;
+	padding-right: 0.75em;
+}
+
+ul.skills {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 0.5rem 1rem;
+	margin: 0;
+	padding-left: 1.5rem;
+}
+
+ul.skills li {
+	margin-bottom: 0;
 }

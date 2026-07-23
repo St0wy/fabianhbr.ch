@@ -1,23 +1,23 @@
-<?jai
-Post :: struct {
-	title: string;
-	description: string;
-	url: string;
-}
-posts: [..] Post;
-
-?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
-	<channel>
-		<title>Stowy's Blog</title>
-		<link>https://fabianhbr.ch</link>
-		<description>Blog of Stowy aka Fabian</description>
-		<?jai for posts { ?>
-			<item>
-				<title><?jai echo("%", it.title); ?></title>
-				<description><?jai echo("%", it.description); ?></description>
-				<guid><?jai echo("%", it.url); ?></guid>
-			</item>
-		<?jai } ?>
-	</channel>
+    <channel>
+        <title>Stowy's Blog</title>
+        <link>https://fabianhbr.ch</link>
+        <description>Blog of Stowy aka Fabian</description>
+
+        <?jai for posts { ?>
+            <item>
+                <title><?jai echo("%", it.title); ?></title>
+
+                <link>https://fabianhbr.ch/posts/<?jai echo("%", it.slug); ?></link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/<?jai echo("%", it.slug); ?></guid>
+                <description><![CDATA[<?jai echo("%", it.description); ?>]]></description>
+                <pubDate><?jai echo("%", calendar_to_iso_string(it.pub_date_time)); ?></pubDate>
+                <?jai for tag: it.tags { ?>
+                    <category><?jai echo("%", tag); ?></category>
+                <?jai } ?>
+            </item>
+        <?jai } ?>
+
+    </channel>
 </rss>

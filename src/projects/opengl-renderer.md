@@ -32,8 +32,8 @@ It features :
 -   Model Loading (OBJ and glTF)
 -   KTX Textures Loading
 
-I wrote a blog post where I explained some of the technical
-details behind this renderer on [this blog post](/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl).
+I wrote an explanation of some of the technical
+details behind this renderer in [How I implemented a deferred PBR renderer in OpenGL](/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl).
 
 ## What I Learned
 

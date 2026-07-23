@@ -2,7 +2,7 @@
 title: How I implemented a deferred PBR renderer in OpenGL
 slug: how-i-implemented-a-deferred-pbr-renderer-in-opengl
 pubDatetime: 2023-07-18
-tags: graphics-programming, cpp, english, sae
+tags: graphics-programming, cpp, sae
 description: Technical breakdown of my deferred PBR renderer made with OpenGL in C++.
 ---
 

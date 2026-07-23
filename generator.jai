@@ -276,6 +276,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	make_directory_if_it_does_not_exist(BUILD_DIR);
 	make_directory_if_it_does_not_exist(tprint("%posts", BUILD_DIR));
 	make_directory_if_it_does_not_exist(tprint("%projects", BUILD_DIR));
+	make_directory_if_it_does_not_exist(tprint("%about", BUILD_DIR));
 
 	#insert -> string {
 		sb: String_Builder;
@@ -298,7 +299,11 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	title = "Fabian Huber";
 	execute_jaitml("src/index.html.jaitml", tprint("%index.html", BUILD_DIR));
 	title = "Posts - Fabian Huber";
-	execute_jaitml("src/posts.html.jaitml", tprint("%/posts/index.html", BUILD_DIR));
+	execute_jaitml("src/posts.html.jaitml", tprint("%posts/index.html", BUILD_DIR));
 	title = "Projects - Fabian Huber";
-	execute_jaitml("src/projects.html.jaitml", tprint("%/projects/index.html", BUILD_DIR));
+	execute_jaitml("src/projects.html.jaitml", tprint("%projects/index.html", BUILD_DIR));
+	title = "About - Fabian Huber";
+	execute_jaitml("src/about.html.jaitml", tprint("%about/index.html", BUILD_DIR));
+
+	execute_jaitml("src/rss.xml.jaitml", tprint("%rss.xml", BUILD_DIR));
 }

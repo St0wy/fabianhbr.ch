@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+    <channel>
+        <title>Stowy's Blog</title>
+        <link>https://fabianhbr.ch</link>
+        <description>Blog of Stowy aka Fabian</description>
+
+        
+            <item>
+                <title>An exploration of build systems for C++ projects</title>
+
+                <link>https://fabianhbr.ch/posts/an-exploration-of-build-systems-for-cpp-projects</link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/an-exploration-of-build-systems-for-cpp-projects</guid>
+                <description><![CDATA[Exploring how to build a C++ project using Batch, Powershell, Nushell, Zig and CMake.]]></description>
+                <pubDate>2023-09-26T00:00:00.000Z</pubDate>
+                
+                    <category>build-systems</category>
+                
+                    <category>nushell</category>
+                
+                    <category>cmake</category>
+                
+                    <category>cpp</category>
+                
+            </item>
+        
+            <item>
+                <title>How I implemented a deferred PBR renderer in OpenGL</title>
+
+                <link>https://fabianhbr.ch/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl</link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl</guid>
+                <description><![CDATA[Technical breakdown of my deferred PBR renderer made with OpenGL in C++.]]></description>
+                <pubDate>2023-07-18T00:00:00.000Z</pubDate>
+                
+                    <category>graphics-programming</category>
+                
+                    <category>cpp</category>
+                
+                    <category>sae</category>
+                
+            </item>
+        
+            <item>
+                <title>Raytracing: From 6 minutes to 5 seconds</title>
+
+                <link>https://fabianhbr.ch/posts/raytracing-from-6-minutes-to-5-seconds</link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/raytracing-from-6-minutes-to-5-seconds</guid>
+                <description><![CDATA[Technical blog post on how I optimized a Raytracer using various methods.]]></description>
+                <pubDate>2023-04-11T00:00:00.000Z</pubDate>
+                
+                    <category>optimization</category>
+                
+                    <category>raytracing</category>
+                
+                    <category>rust</category>
+                
+                    <category>sae</category>
+                
+                    <category>computer-graphics</category>
+                
+            </item>
+        
+            <item>
+                <title>Rollback Netcode in Atomic Ball</title>
+
+                <link>https://fabianhbr.ch/posts/rollback-netcode-in-atomic-ball</link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/rollback-netcode-in-atomic-ball</guid>
+                <description><![CDATA[Technical post on how I used the Rollback engine of my teacher in the game Atomic Ball]]></description>
+                <pubDate>2022-10-31T00:00:00.000Z</pubDate>
+                
+                    <category>netcode</category>
+                
+                    <category>cpp</category>
+                
+                    <category>sae</category>
+                
+            </item>
+        
+
+    </channel>
+</rss>

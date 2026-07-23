@@ -1,0 +1,56 @@
+<?jai include("header.jaitml"); ?>
+<main>
+	<p>
+		Hi! My name is <b>Fabian Huber</b>. I am a <b>Game & Graphics Programmer</b>.
+		I specialize in <b>Computer Graphics</b> and <b>low-level systems for video games</b>. I hold a <b>Bachelor’s degree in Games Programming</b> and an Advanced Technician Diploma in Computer Science with a specialization in Application Development.
+	</p>
+	<h2>Education & Interest</h2>
+	<p>
+		I started a Swiss Federal Certificate in Computer Science in 2016 that I followed with an Advanced Diploma in Computer Science.
+		I then did a <b>Bachelor of Science in Games Programming</b> that I finished in 2024.
+	</p>
+	<h2>Languages & Gaming</h2>
+	<p>
+		I am native in <b>French</b> and can speak <b>English</b> fluently.
+		I can speak some <b>German</b> thanks to my time in the Swiss Armed Forces.
+		I am currently stuying <b>Japanese</b> (N4, studying for N3) and love learning new languages.
+		Some of my favorite video games of all time include <em>Super Smash Bros. Melee</em>, <em>Kingdom Hearts 2</em>, <em>Persona 5</em> and <em>The Legend of Zelda: Breath of the Wild</em>.
+	</p>
+	<h2>Professional Experience</h2>
+	<p>
+		I am sergeant in the Swiss Armed Forces. I did my basic training in 2025 where I :
+		<ul>
+			<li>Led and trained a squad, ensuring operational readiness and discipline</li>
+			<li>Planned and coordinated tasks under time and resource constraints</li>
+			<li>Developed leadership, communication, and decision-making skills</li>
+		</ul>
+	</p>
+	<p>
+		I worked for a year in 2024 in the bank <em>Pictet</em>, hired by <em>Bechtle</em>, as a first level <b>Help Desk Technician</b>.
+	</p>
+	<h2>Skills</h2>
+	<ul class="skills">
+		<li>C/C++</li>
+		<li>Jai</li>
+		<li>Rust</li>
+		<li>Vulkan</li>
+		<li>OpenGL</li>
+		<li>C#</li>
+		<li>Unity</li>
+		<li>JS/TS</li>
+		<li>Python</li>
+		<li>SQL</li>
+		<li>Git</li>
+		<li>Perforce</li>
+	</ul>
+	<h2>Contact Info</h2>
+	<table class="gbt2">
+		<tbody>
+			<tr><td>  Email:</td><td><a href="#">fabianhbr <em>[at]</em> protonmail <em>[dot]</em> ch</a></td></tr>
+			<tr><td>Bluesky:</td><td><a href="//bsky.app/profile/stowy.ch">@stowy.ch</a></td></tr>
+			<tr><td>Mastodon:</td><td><a href="//mastodon.gamedev.place/@stowy">@stowy@mastodon.gamedev.place</a></td></tr>
+			<tr><td> GitHub:</td><td><a href="//github.com/St0wy">github.com/St0wy</a></td></tr>
+		</tbody>
+	</table>
+</main>
+<?jai include("footer.jaitml"); ?>

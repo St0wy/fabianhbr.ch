@@ -2,7 +2,7 @@
 title: Raytracing: From 6 minutes to 5 seconds
 slug: raytracing-from-6-minutes-to-5-seconds
 pubDatetime: 2023-04-11
-tags: optimization, raytracing, rust, english, sae
+tags: optimization, raytracing, rust, sae, computer-graphics
 description: Technical blog post on how I optimized a Raytracer using various methods.
 ---
 
