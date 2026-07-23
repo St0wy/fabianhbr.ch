@@ -470,3 +470,21 @@ ul.skills {
 ul.skills li {
 	margin-bottom: 0;
 }
+
+article h1 a, article h2 a, article h3 a {
+	color: #333;
+}
+article h1 a:hover, article h2 a:hover, article h3 a:hover {
+  color: var(--main-color);
+}
+@media (prefers-color-scheme: dark) {
+  article h1 a, article h2 a, article h3 a {
+    color: #ddd;
+  }
+}
+
+article h1 a:hover:before, article h2 a:hover:before, article h3 a:hover:before {
+	content: '§ ';
+	margin-left: -0.75em;
+	display:inline;
+}
