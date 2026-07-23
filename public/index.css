@@ -211,7 +211,7 @@ img, video {
 	margin: 2rem auto;
 }
 
-p img {
+article img {
 	cursor: zoom-in;
 }
 
@@ -233,6 +233,7 @@ p img {
 	max-width: 90vw;
 	max-height: 90vh;
 	box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+	margin: 0;
 }
 
 table {
@@ -336,4 +337,107 @@ blockquote cite::before {
 	blockquote cite {
 		color: #999;
 	}
+}
+
+.screenshots {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+}
+
+.screenshots img {
+	width: 18rem;
+	height: auto;
+	object-fit: scale-down;
+}
+
+.project-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 2rem;
+	margin: 2rem 0;
+}
+
+.project-card {
+	display: flex;
+	flex-direction: column;
+	text-decoration: none;
+	border-radius: 8px;
+	overflow: hidden;
+	background-color: #f7f7f7;
+	border: 3px solid #e0e0e0;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.project-card:hover {
+    text-decoration: none;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--main-color);
+}
+
+.project-card img {
+    margin: 0;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-bottom: 1px solid #e0e0e0;
+    display: block;
+}
+
+.project-info {
+	padding: 1.25rem;
+}
+
+.project-info h3 {
+	margin: 0 0 0.5rem 0;
+	color: #111;
+	font-size: 1.25rem;
+}
+
+.project-info p {
+	margin: 0;
+	color: #555;
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+	.project-card {
+		background-color: #242424;
+		border-color: #333;
+	}
+	.project-card:hover {
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+	}
+	.project-card img {
+		border-bottom-color: #333;
+		background-color: #1a1a1a;
+	}
+	.project-info h3 {
+		color: #eee;
+	}
+	.project-info p {
+		color: #aaa;
+	}
+}
+
+.project-details {
+    display: flex;
+    align-items: center;
+}
+
+svg {
+	margin-right: 0.5rem;
+}
+
+.video {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    margin: 2rem 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: block;
 }

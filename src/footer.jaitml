@@ -23,7 +23,7 @@
 <script>
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
-	const images = document.querySelectorAll('p img');
+	const images = document.querySelectorAll('article img');
 
 	// Loop through all images and add a click event
 	images.forEach(img => {

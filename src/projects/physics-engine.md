@@ -1,17 +1,13 @@
 ---
-title: "2D C++ Physics Engine"
-description: "This is a 2D physics engine made in C++ with no libraries. 
-It has a demo project to showcase it made with SFML and a web demo made with Raylib. 
-The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 261'000 views."
-creationDate: "Jul 15 2022"
-heroImage: "../../assets/physics-engine/physics-engine.png"
-order: 10
+title: 2D C++ Physics Engine
+description: This is a 2D physics engine made in C++ with no libraries. It has a demo project to showcase it made with SFML and a web demo made with Raylib. The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 318'000 views.
+slug: physics-engine
+pubDatetime: 2022-07-15
+heroImage: /assets/images/physics-engine/physics-engine.png
 teamSize: 1
-timeFrame: "1 Month"
-toolUsed: "C++"
+timeFrame: 1 Month
+toolsUsed: C++
 ---
-
-import Button from "../../components/Button.astro";
 
 This is a **2D physics engine** made in **C++** with no libraries.
 It was made during the physics engine module of the SAE Institute.
@@ -27,18 +23,88 @@ But recently, I ported it to [raylib](https://www.raylib.com/) so that I
 could compile the projet to a web version with [Emscripten](https://emscripten.org/).
 You can left click to place circles and right click to place squares.
 
-<div class="flex" style="margin-bottom: 1em;">
-	<Button href="https://stowy-physics-engine.readthedocs.io/en/latest/index.html">
-		Online Docs
-	</Button>
-	<Button href="https://github.com/St0wy/StowyPhysicsEngine">
-		Github Page
-	</Button>
-</div>
+You can read the project's documentation on [Read the Docs](https://stowy-physics-engine.readthedocs.io/en/latest/index.html) and see the source on [GitHub](https://github.com/St0wy/StowyPhysicsEngine).
 
-import PhysicsEngineDemo from "../../components/physics_engine/PhysicsEngineDemo.astro";
+<div class="spinner" id="spinner"></div>
+<div class="emscripten" id="status">Downloading...</div>
+<progress hidden id="progress" max="100" value="0"></progress>
 
-<PhysicsEngineDemo />
+<canvas
+    class="emscripten"
+    id="canvas"
+    oncontextmenu="
+    event.preventDefault()
+    "
+    tabindex="-1"></canvas>
+
+<script is:inline>
+var statusElement = document.getElementById("status"),
+    progressElement = document.getElementById("progress"),
+    spinnerElement = document.getElementById("spinner"),
+    Module = {
+        preRun: [],
+        postRun: [],
+        print: (function () { })(),
+        canvas: (() => {
+            var e = document.getElementById("canvas");
+            return (
+                e.addEventListener(
+                    "webglcontextlost",
+                    (e) => {
+                        alert(
+                            "WebGL context lost. You will need to reload the page."
+                        ),
+                            e.preventDefault();
+                    },
+                    !1
+                ),
+                e
+            );
+        })(),
+        setStatus: (e) => {
+            if (
+                (Module.setStatus.last ||
+                    (Module.setStatus.last = {
+                        time: Date.now(),
+                        text: "",
+                    }),
+                    e !== Module.setStatus.last.text)
+            ) {
+                var t = e.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/),
+                    n = Date.now();
+                (t && n - Module.setStatus.last.time < 30) ||
+                    ((Module.setStatus.last.time = n),
+                        (Module.setStatus.last.text = e),
+                        t
+                            ? ((e = t[1]),
+                                (progressElement.value = 100 * parseInt(t[2])),
+                                (progressElement.max = 100 * parseInt(t[4])),
+                                (progressElement.hidden = !1),
+                                (spinnerElement.hidden = !1))
+                            : ((progressElement.value = null),
+                                (progressElement.max = null),
+                                (progressElement.hidden = !0),
+                                e || (spinnerElement.style.display = "none")),
+                        (statusElement.innerHTML = e));
+            }
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: (e) => {
+            (this.totalDependencies = Math.max(this.totalDependencies, e)),
+                Module.setStatus(
+                    e
+                        ? "Preparing... (" +
+                        (this.totalDependencies - e) +
+                        "/" +
+                        this.totalDependencies +
+                        ")"
+                        : "All downloads complete."
+                );
+        },
+    };
+Module.setStatus("Downloading..."), (window.onerror = (e) => { });
+</script>
+<script async src="/physics_engine_web_demo.js"></script>
 
 ## What I Learned
 
@@ -51,38 +117,32 @@ import PhysicsEngineDemo from "../../components/physics_engine/PhysicsEngineDemo
 
 The project was also featured in 3 code review videos made by [The Cherno](https://www.youtube.com/@TheCherno),
 who was an engine developper at Electronic Arts for 4 years.
-They accumulated a total of 260'000 views.
+They accumulated over 318'000 views as I'm writing this.
 In these, The Cherno looks at my code and makes comments on the various things that could be improved.
 
-<div class="grid place-items-center">
-	<iframe
-		style="overflow:hidden;width:90%;aspect-ratio:16/9"
-		src="https://www.youtube-nocookie.com/embed/eNSkYAzC_ew"
-		title="YouTube video player"
-		frameborder="0"
-		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-		allowfullscreen
-	/>
-</div>
+<iframe
+	class="video"
+	src="https://www.youtube-nocookie.com/embed/eNSkYAzC_ew"
+	title="YouTube video player"
+	frameborder="0"
+	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+	allowfullscreen
+></iframe>
 
-<div class="grid place-items-center">
-	<iframe
-		style="overflow:hidden;width:90%;aspect-ratio:16/9"
-		src="https://www.youtube-nocookie.com/embed/0AFKxekpbUM"
-		title="YouTube video player"
-		frameborder="0"
-		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-		allowfullscreen
-	/>
-</div>
+<iframe
+	class="video"
+	src="https://www.youtube-nocookie.com/embed/0AFKxekpbUM"
+	title="YouTube video player"
+	frameborder="0"
+	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+	allowfullscreen
+></iframe>
 
-<div class="grid place-items-center">
-	<iframe
-		style="overflow:hidden;width:90%;aspect-ratio:16/9"
-		src="https://www.youtube-nocookie.com/embed/o1qs-KqJlzI"
-		title="YouTube video player"
-		frameborder="0"
-		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-		allowfullscreen
-	/>
-</div>
+<iframe
+	class="video"
+	src="https://www.youtube-nocookie.com/embed/o1qs-KqJlzI"
+	title="YouTube video player"
+	frameborder="0"
+	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+	allowfullscreen
+></iframe>

@@ -1,15 +1,13 @@
 ---
-title: "Networking - Rollback Atomic Ball"
-description: "Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball."
-creationDate: "January 3, 2022"
-heroImage: "../../assets/networking/rollback-atomic-ball.png"
-order: 50
+title: Networking - Rollback Atomic Ball
+description: Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball.
+slug: rollback-atomic-ball
+pubDatetime: 2022-01-03
+heroImage: /assets/images/networking/rollback-atomic-ball.png
 teamSize: 1
-timeFrame: "1 Month"
-toolUsed: "C++"
+timeFrame: 1 Month
+toolsUsed: C++
 ---
-
-import Button from "../../components/Button.astro";
 
 During the **networking** module at SAE Institute, the goal was to make a **Rollback Online Game**.
 But first, we did smaller projects to learn how networking works.
@@ -18,19 +16,19 @@ The first thing we did was to implement was a small **chat app**.
 For this, I used [Dear ImGui](https://github.com/ocornut/imgui) for the user interface
 and [SFML](https://www.sfml-dev.org/) to be able to use sockets.
 
-![A small chat app.](../../assets/networking/echo-server.png)
+![A small chat app.](/assets/images/networking/echo-server.png)
 
 We then had to do a **turn-based game**.
 I decided to implement a **Tic-Tac-Toe**.
 In this one I also used SFML for the graphics and not just the networking.
 
-![A small tic tac toe](../../assets/networking/tic-tac-toe.png)
+![A small tic tac toe](/assets/images/networking/tic-tac-toe.png)
 
 After that we started the big final project.
 The task was to develop a game using the **rollback engine** of our teacher.
-So I decided to redo a jam game, [**Atomic Ball**](./atomic-ball), using SFML.
+So I decided to redo a jam game, [**Atomic Ball**](https://orangecube.ch/game/4), using SFML.
 
-To do that, I first added and modified my [**physics engine**](./physics-engine) to the project.
+To do that, I first added and modified my [**physics engine**](/projects/physics-engine/) to the project.
 This is necessary because of how rollback works.
 Then, I built the rest of the game.
 
@@ -40,7 +38,7 @@ But in the end, I'm quite proud of the work I did and it was really interesting 
 reliable data transfer using UDP.
 
 I wrote a blog post where I explained broadly how the online in the game works :
-[Rollback Netcode in Atomic Ball](https://blog.stowy.ch/posts/rollback-netcode-in-atomic-ball/)
+[Rollback Netcode in Atomic Ball](/posts/rollback-netcode-in-atomic-ball/)
 
 ## What I Learned
 
@@ -50,13 +48,9 @@ I wrote a blog post where I explained broadly how the online in the game works :
 
 <div class="grid place-items-center">
 	<video width="640" height="480" loop muted autoplay controls>
-		<source src="/networking/atomicDemo.mp4" type="video/mp4" />
+		<source src="/assets/images/networking/atomicDemo.mp4" type="video/mp4" />
 		Your browser does not support the video tag.
 	</video>
 </div>
 
-<div class="flex">
-	<Button href="https://github.com/St0wy/rollback-atomic-ball">
-		Github Page
-	</Button>
-</div>
+You can find the source of the project on [GitHub](https://github.com/St0wy/rollback-atomic-ball).

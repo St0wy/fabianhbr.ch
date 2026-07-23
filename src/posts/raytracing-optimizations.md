@@ -12,7 +12,7 @@ Since I enjoy computer graphics, I decided to follow [Ray Tracing in One Weekend
 And since I also enjoy Rust, it's the language I chose for this project.
 Although there are some Rust specific stuff, most of the optimizations can be applied in any programming language, so don't be scared if you don't know any Rust.
 
-You can see the code on this repo : https://github.com/St0wy/raytracing/
+You can see the code on this repo : [https://github.com/St0wy/raytracing](https://github.com/St0wy/raytracing)
 
 ## The project
 
@@ -109,7 +109,7 @@ For example if you have an array of objects that you want to process, you try to
 Yes ! That's the point !
 Since inheritence makes you go through a [v-table](https://stackoverflow.com/a/3004555/12330678), it has an heavy impact on performances.
 
-> So you're telling that you remove inheritance, but I thought that Rust didn't have inheritance ?
+> So you're saying that you removed inheritance, but I thought that Rust didn't have inheritance ?
 
 Well, kinda. You can't inherit from an other struct in Rust. Structs can only implement traits.
 But, you can have a vector of the equivalent of an unique pointer in c++ of traits.

@@ -2,7 +2,7 @@
 <main>
 	<p class="bigger">Hi! My name is Fabian Huber. I am a Game & Graphics Programmer.</p>
 	<p>I specialize in <b>Computer Graphics</b> and <b>low-level</b> systems for video games. I hold a <b>Bachelor’s degree</b> in <b>Games Programming</b> and an <b>Advanced Technician Diploma</b> in Computer Science with a specialization in Application Development.</p>
-	<!--<h2>Featured Projects</h2>-->
+	<?jai include("projects_list.jaitml"); ?>
 	<?jai include("posts_list.jaitml"); ?>
 </main>
 <?jai include("footer.jaitml"); ?>

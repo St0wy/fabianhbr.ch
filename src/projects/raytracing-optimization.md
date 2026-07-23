@@ -1,21 +1,13 @@
 ---
-title: "Optimizations: Ray Tracing in One Weekend"
-description: "Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds."
-creationDate: "Feb 15 2023"
-heroImage: "../../assets/raytracing/bigScene.png"
-order: 30
-screenshots:
-    [
-        "/src/assets/raytracing/bigScene.png",
-        "/src/assets/raytracing/perlinEarth.png",
-        "/src/assets/raytracing/cornell.png",
-    ]
+title: Optimizations: Ray Tracing in One Weekend
+description: Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds.
+slug: raytracing-optimizations
+pubDatetime: 2023-02-15
+heroImage: /assets/images/raytracing/bigScene.png
 teamSize: 1
-timeFrame: "1.5 Month"
-toolUsed: "Rust"
+timeFrame: 1.5 Month
+toolsUsed: Rust
 ---
-
-import Button from "../../components/Button.astro";
 
 This project was made during the **optimization** module at SAE Institute.
 The goal was to make a project in a **naive way**, and then **optimize** it using the various techniques we learned during the module.
@@ -24,7 +16,7 @@ I choose to follow **Ray Tracing in One Weekend** in **Rust**.
 I think it was a good idea since the book has a big Object Oriented style which made it quite slow.
 It allowed me to profit from Rust's design and work in a **Data Oriented** manner.
 
-You can read about the optimizations I did on my blogpost : [Raytracing : From 6 minutes to 5 seconds](https://blog.stowy.ch/posts/raytracing-optimizations/).
+You can read about the optimizations I did on my blogpost : [Raytracing : From 6 minutes to 5 seconds](/posts/raytracing-from-6-minutes-to-5-seconds/).
 
 ## What I Learned
 
@@ -40,12 +32,14 @@ Mostly on subjects such as :
 
 I also learned the **math** and logic behind **Ray Tracing**.
 
-<Button href="https://github.com/St0wy/raytracing">GitHub Page</Button>
+You can see the source code of the project on [GitHub](https://github.com/St0wy/raytracing).
 
 ---
 
 ## Screenshots
 
-import ScreenshotList from "../../components/ScreenshotList.astro";
-
-<ScreenshotList screenshots={frontmatter.screenshots} imageClasses="w-full" />
+<div class="screenshots">
+	<img src="/assets/images/raytracing/bigScene.png" />
+	<img src="/assets/images/raytracing/perlinEarth.png" />
+	<img src="/assets/images/raytracing/cornell.png" />
+</div>

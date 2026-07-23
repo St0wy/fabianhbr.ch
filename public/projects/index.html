@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Projects - Fabian Huber</title>
+		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/projects">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/">About</a></li>
+				</ul>
+			</nav>
+		</header>
+<main>
+	
+<h2>Projects</h2>
+<div class="project-grid">
+	
+	<a href="/projects/voxel-ray-tracing" class="project-card">
+		<img src="/assets/images/bsc/final.jpg" />
+		<div class="project-info">
+			<h3>Bachelor Thesis - Voxel Path Tracing</h3>
+			<p>Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/need-more-bullets" class="project-card">
+		<img src="/assets/images/need-more-bullets/need_more_bullets.png" />
+		<div class="project-info">
+			<h3>Need More Bullets</h3>
+			<p>Game made during the LvlUp Game Jam 2024 in 48 hours with a team of 3 programmers where it won the public's choice award.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/opengl-renderer" class="project-card">
+		<img src="/assets/images/opengl-scene/chat.jpg" />
+		<div class="project-info">
+			<h3>OpenGL - Deferred PBR Renderer</h3>
+			<p>A deferred PBR renderer made in C++ with OpenGL. Implements Image-Based Lighting, glTF format loading, GPU-compressed textures, Normal Maps, Cascaded Shadow Maps, Bloom and SSAO.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/raytracing-optimizations" class="project-card">
+		<img src="/assets/images/raytracing/bigScene.png" />
+		<div class="project-info">
+			<h3>Optimizations: Ray Tracing in One Weekend</h3>
+			<p>Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/physics-engine" class="project-card">
+		<img src="/assets/images/physics-engine/physics-engine.png" />
+		<div class="project-info">
+			<h3>2D C++ Physics Engine</h3>
+			<p>This is a 2D physics engine made in C++ with no libraries. It has a demo project to showcase it made with SFML and a web demo made with Raylib. The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 318'000 views.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/rollback-atomic-ball" class="project-card">
+		<img src="/assets/images/networking/rollback-atomic-ball.png" />
+		<div class="project-info">
+			<h3>Networking - Rollback Atomic Ball</h3>
+			<p>Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball.</p>
+		</div>
+	</a>
+	
+</div>
+
+</main>
+<footer>© 2026 Fabian Huber</footer>
+<!--<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+<script>
+	mediumZoom('p img', {
+		margin: 24,
+		background: '#000000CC'
+	})
+</script>-->
+
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+<script>
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('article img');
+
+	// Loop through all images and add a click event
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src; // Copy the clicked image's source
+			lightbox.style.display = 'block'; // Show the lightbox
+		});
+	});
+
+	// Close the lightbox when clicking anywhere on it
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = ""; // Clear out the source
+	});
+</script>
+</body>
+</html>

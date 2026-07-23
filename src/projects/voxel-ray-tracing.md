@@ -1,26 +1,13 @@
 ---
-title: "Bachelor Thesis - Voxel Path Tracing"
-description: "Final project of my studies at SAE Institute Geneva.
-Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language.
-The thesis document was made in Typst."
-creationDate: "July 19, 2024"
-heroImage: "../../assets/bsc/final.jpg"
-order: 1
+title: Bachelor Thesis - Voxel Path Tracing
+description: Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst.
+slug: voxel-ray-tracing
+pubDatetime: 2024-07-19
+heroImage: /assets/images/bsc/final.jpg
 teamSize: 1
-timeFrame: "7 Months"
-toolUsed: "Jai / Vulkan"
-screenshots:
-    [
-    	"/src/assets/bsc/smooth-shadows-noisy.png",
-        "/src/assets/bsc/path-trace.jpg",
-        "/src/assets/bsc/env-map.png",
-        "/src/assets/bsc/final.jpg",
-        "/src/assets/bsc/final-pixel.jpg",
-        "/src/assets/bsc/final-russian.jpg",
-    ]
+timeFrame: 7 Months
+toolsUsed: Jai / Vulkan
 ---
-
-import Button from "../../components/Button.astro";
 
 Final project of my studies at SAE Institute Geneva.
 Implemented **Voxel Path Tracing** in a **Vulkan** compute shader using the **Jai** programming language.
@@ -42,8 +29,8 @@ It features :
 - **Statistics**: Doing real-time path tracing requires to apply some statistics concepts,
 	and I also used student's T-test to prove than an optimisation made something faster.
 
-<Button href="https://gitlab.com/Stowy/voxel-ray-tracer">GitLab Page of Media Project</Button>
-<Button href="https://gitlab.com/Stowy/bachelor-thesis">GitLab Page of Thesis</Button>
+You can see the source of the [renderer on GitLab](https://gitlab.com/Stowy/voxel-ray-tracer)
+and see the source of the [thesis also on GitLab](https://gitlab.com/Stowy/bachelor-thesis).
 
 ---
 
@@ -53,12 +40,17 @@ It features :
 	<p>Unable to display PDF file. <a href="https://stowy.gitlab.io/bachelor-thesis/main.pdf">Download</a> instead.</p>
 </object>
 
-<Button href="https://stowy.gitlab.io/bachelor-thesis/main.pdf">Open in new tab</Button>
+You can find the pdf at [https://stowy.gitlab.io/bachelor-thesis/main.pdf](https://stowy.gitlab.io/bachelor-thesis/main.pdf).
 
 ---
 
 ## Screenshots
 
-import ScreenshotList from "../../components/ScreenshotList.astro";
-
-<ScreenshotList screenshots={frontmatter.screenshots} />
+<div class="screenshots">
+	<img src="/assets/images/bsc/smooth-shadows-noisy.png" />
+	<img src="/assets/images/bsc/path-trace.jpg" />
+	<img src="/assets/images/bsc/env-map.png" />
+	<img src="/assets/images/bsc/final.jpg" />
+	<img src="/assets/images/bsc/final-pixel.jpg" />
+	<img src="/assets/images/bsc/final-russian.jpg" />
+</div>

@@ -16,7 +16,7 @@
 				<h1 id="title"><a href="/">Fabian Huber</a></h1>
 				<ul class="menu">
 					<li><a href="/">Home</a></li>
-					<li><a href="/">Projects</a></li>
+					<li><a href="/projects">Projects</a></li>
 					<li><a href="/posts">Posts</a></li>
 					<li><a href="/">About</a></li>
 				</ul>
@@ -25,7 +25,60 @@
 <main>
 	<p class="bigger">Hi! My name is Fabian Huber. I am a Game & Graphics Programmer.</p>
 	<p>I specialize in <b>Computer Graphics</b> and <b>low-level</b> systems for video games. I hold a <b>Bachelor’s degree</b> in <b>Games Programming</b> and an <b>Advanced Technician Diploma</b> in Computer Science with a specialization in Application Development.</p>
-	<!--<h2>Featured Projects</h2>-->
+	
+<h2>Projects</h2>
+<div class="project-grid">
+	
+	<a href="/projects/voxel-ray-tracing" class="project-card">
+		<img src="/assets/images/bsc/final.jpg" />
+		<div class="project-info">
+			<h3>Bachelor Thesis - Voxel Path Tracing</h3>
+			<p>Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/need-more-bullets" class="project-card">
+		<img src="/assets/images/need-more-bullets/need_more_bullets.png" />
+		<div class="project-info">
+			<h3>Need More Bullets</h3>
+			<p>Game made during the LvlUp Game Jam 2024 in 48 hours with a team of 3 programmers where it won the public's choice award.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/opengl-renderer" class="project-card">
+		<img src="/assets/images/opengl-scene/chat.jpg" />
+		<div class="project-info">
+			<h3>OpenGL - Deferred PBR Renderer</h3>
+			<p>A deferred PBR renderer made in C++ with OpenGL. Implements Image-Based Lighting, glTF format loading, GPU-compressed textures, Normal Maps, Cascaded Shadow Maps, Bloom and SSAO.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/raytracing-optimizations" class="project-card">
+		<img src="/assets/images/raytracing/bigScene.png" />
+		<div class="project-info">
+			<h3>Optimizations: Ray Tracing in One Weekend</h3>
+			<p>Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/physics-engine" class="project-card">
+		<img src="/assets/images/physics-engine/physics-engine.png" />
+		<div class="project-info">
+			<h3>2D C++ Physics Engine</h3>
+			<p>This is a 2D physics engine made in C++ with no libraries. It has a demo project to showcase it made with SFML and a web demo made with Raylib. The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 318'000 views.</p>
+		</div>
+	</a>
+	
+	<a href="/projects/rollback-atomic-ball" class="project-card">
+		<img src="/assets/images/networking/rollback-atomic-ball.png" />
+		<div class="project-info">
+			<h3>Networking - Rollback Atomic Ball</h3>
+			<p>Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball.</p>
+		</div>
+	</a>
+	
+</div>
+
 	
 	<h2>Posts</h2>
 	<ul class="posts">
@@ -34,28 +87,24 @@
 			<a href="/posts/an-exploration-of-build-systems-for-cpp-projects">An exploration of build systems for C++ projects</a>
 			<p class="description">Exploring how to build a C++ project using Batch, Powershell, Nushell, Zig and CMake.</p>
 			<p class="date">2023-9-26</p>
-
 		</li>
 	
 		<li>
 			<a href="/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl">How I implemented a deferred PBR renderer in OpenGL</a>
 			<p class="description">Technical breakdown of my deferred PBR renderer made with OpenGL in C++.</p>
 			<p class="date">2023-7-18</p>
-
 		</li>
 	
 		<li>
 			<a href="/posts/raytracing-from-6-minutes-to-5-seconds">Raytracing: From 6 minutes to 5 seconds</a>
 			<p class="description">Technical blog post on how I optimized a Raytracer using various methods.</p>
 			<p class="date">2023-4-11</p>
-
 		</li>
 	
 		<li>
 			<a href="/posts/rollback-netcode-in-atomic-ball">Rollback Netcode in Atomic Ball</a>
 			<p class="description">Technical post on how I used the Rollback engine of my teacher in the game Atomic Ball</p>
 			<p class="date">2022-10-31</p>
-
 		</li>
 	
 	</ul>
@@ -86,7 +135,7 @@
 <script>
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
-	const images = document.querySelectorAll('p img');
+	const images = document.querySelectorAll('article img');
 
 	// Loop through all images and add a click event
 	images.forEach(img => {

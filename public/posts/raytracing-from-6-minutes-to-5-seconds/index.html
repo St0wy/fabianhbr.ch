@@ -16,7 +16,7 @@
 				<h1 id="title"><a href="/">Fabian Huber</a></h1>
 				<ul class="menu">
 					<li><a href="/">Home</a></li>
-					<li><a href="/">Projects</a></li>
+					<li><a href="/projects">Projects</a></li>
 					<li><a href="/posts">Posts</a></li>
 					<li><a href="/">About</a></li>
 				</ul>
@@ -31,7 +31,7 @@
 		</header>
 		<p>During the second module of the second year at SAE Institute, we had to do a project in a naive way, that we would then optimize.</p><p>Since I enjoy computer graphics, I decided to follow <a href="https://raytracing.github.io/books/RayTracingInOneWeekend.html">Ray Tracing in One Weekend</a> written by Peter Shirley.
 And since I also enjoy Rust, it&#39;s the language I chose for this project.
-Although there are some Rust specific stuff, most of the optimizations can be applied in any programming language, so don&#39;t be scared if you don&#39;t know any Rust.</p><p>You can see the code on this repo : https://github.com/St0wy/raytracing/</p><h2>The project</h2><p>When optimizing, it can be sometimes a good idea to change what the program does.
+Although there are some Rust specific stuff, most of the optimizations can be applied in any programming language, so don&#39;t be scared if you don&#39;t know any Rust.</p><p>You can see the code on this repo : <a href="https://github.com/St0wy/raytracing">https://github.com/St0wy/raytracing</a></p><h2>The project</h2><p>When optimizing, it can be sometimes a good idea to change what the program does.
 For example, you could reduce the number of objects in a scene, so that it can be computed faster.
 In this case, I wanted to keep the image intact.
 The goal was to have the same image before and after the optimizations.</p><p>To make this possible, I decided on four scenes that would showcase the different features of the raytracer and how some optimizations could impact different cases.</p><p>They are all rendered on a 400x400 image with 200 samples per pixel and a ray depth of 30.</p><p>Here are all of the scenes :</p><h3>Three Spheres</h3><p>This is a scene with three spheres, that are all of a different material.
@@ -58,7 +58,7 @@ The sphere on top has an image texture of the earth.</p><p><img src="/assets/ima
 	</tbody>
 </table><p>(This is measured on my laptop, with an 8 core AMD Ryzen 9 5900HS at 3.30 GHz and 24.0 GB of RAM)</p><p>I measured these using the <a href="https://github.com/bheisler/criterion.rs">Criterion.rs</a> benchmarking library.</p><p>In this case, the project is implemented as an almost exact copy of the c++ code provided, but translated in Rust.</p><p>As you can see, there is a big hit on performance from the amount of objects in the big scene. We&#39;ll see how we can reduce that with the first optimization.</p><h2>Data Oriented</h2><h3>What&#39;s Data Oriented Programming</h3><p>If you&#39;re not sure what <a href="https://blog.klipse.tech/databook/2020/09/25/data-book-chap0.html">Data Oriented Programming</a> means, I will try to summarize it for you.</p><p>It&#39;s basically centered around the idea that the way the data is layed out in your memory, can (and will) impact performance.</p><p>When you code in a data oriented way, one of the things that you try to do is having as much data as possible that&#39;s contiguous.
 For example if you have an array of objects that you want to process, you try to avoid having an array of pointers to these objects, but instead you use an array to these objects.</p><blockquote><p>But this will ruin inheritence !</p></blockquote><p>Yes ! That&#39;s the point !
-Since inheritence makes you go through a <a href="https://stackoverflow.com/a/3004555/12330678">v-table</a>, it has an heavy impact on performances.</p><blockquote><p>So you&#39;re telling that you remove inheritance, but I thought that Rust didn&#39;t have inheritance ?</p></blockquote><p>Well, kinda. You can&#39;t inherit from an other struct in Rust. Structs can only implement traits.
+Since inheritence makes you go through a <a href="https://stackoverflow.com/a/3004555/12330678">v-table</a>, it has an heavy impact on performances.</p><blockquote><p>So you&#39;re saying that you removed inheritance, but I thought that Rust didn&#39;t have inheritance ?</p></blockquote><p>Well, kinda. You can&#39;t inherit from an other struct in Rust. Structs can only implement traits.
 But, you can have a vector of the equivalent of an unique pointer in c++ of traits.</p><pre><code class="language-cpp">// C++
 std::vector&lt;std::unique_ptr&lt;Hittable&gt;&gt; hittables;</code></pre><pre><code class="language-rust">// rust
 let hittables: Vec&lt;Box&lt;dyn Hittable&gt;&gt;;</code></pre><p>Since Rust wants to make it obvious when you have a cost in its abstractions, it asks you to add the <code>dyn</code> keyword.
@@ -230,7 +230,7 @@ It&#39;s not quite real-time, the GPU might be needed for that. And there are pr
 <script>
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
-	const images = document.querySelectorAll('p img');
+	const images = document.querySelectorAll('article img');
 
 	// Loop through all images and add a click event
 	images.forEach(img => {

@@ -11,7 +11,6 @@ Markdown :: #import "Markdown";
 OPEN_TAG :: "<?jai";
 CLOSE_TAG :: "?>";
 BUILD_DIR :: "public/";
-TEMPLATE_EXTENSION :: ".jaitml";
 
 Post :: struct {
 	title: string;
@@ -19,6 +18,18 @@ Post :: struct {
 	pub_date_time: Calendar_Time;
 	tags: [] string;
 	description: string;
+	html: string;
+}
+
+Project :: struct {
+	title: string;
+	slug: string;
+	pub_date_time: Calendar_Time;
+	description: string;
+	hero_image: string;
+	team_size: int;
+	time_frame: string;
+	tools_used: string;
 	html: string;
 }
 
@@ -47,23 +58,46 @@ posts :: #run -> [] Post {
 	return sorted;
 }
 
+projects :: #run -> [] Project {
+	projects_arr: [..] Project;
+	visit_files("src/projects", false, *projects_arr, (info: *File_Visit_Info, projects_arr: *[..] Project) {
+		if info.is_directory then return;
+		ext, ok := path_extension(info.short_name);
+		if !ok then return;
+		if ext != "md" then return;
+
+		log("Parsing %", info.short_name);
+		markdown_file_contents := read_entire_file(info.full_name);
+		node := Markdown.parse(markdown_file_contents);
+		html := Markdown.emit_html(node);
+		project := parse_project_frontmatter(node.content);
+		project.html = html;
+		make_directory_if_it_does_not_exist(tprint("%projects/%", BUILD_DIR, project.slug));
+		array_add(projects_arr, project);
+	});
+	sorted := quick_sort(projects_arr, (project_a: Project, project_b: Project) -> int {
+		time_a := calendar_to_apollo(project_a.pub_date_time);
+		time_b := calendar_to_apollo(project_b.pub_date_time);
+		return compare_apollo_times(time_b, time_a);
+	});
+	return sorted;
+}
+
 title := "";
 
-parse_post_frontmatter :: (frontmatter: string) -> Post {
-	advance_to_newline :: inline (str: *string) {
-		while str.count > 0 && str.*[0] != "\n" advance(str);
-	}
-
-	skip_line :: inline (str: *string) {
-		if str.count == 0 then return;
-		c := str.*[0];
+advance_to_newline :: inline (str: *string) {
+	while str.count > 0 && str.*[0] != "\n" advance(str);
+}
+skip_line :: inline (str: *string) {
+	if str.count == 0 then return;
+	c := str.*[0];
+	advance(str);
+	while str.count > 0 && c != "\n" {
+		c = str.*[0];
 		advance(str);
-		while str.count > 0 && c != "\n" {
-			c = str.*[0];
-			advance(str);
-		}
 	}
-
+}
+parse_post_frontmatter :: (frontmatter: string) -> Post {
 	post: Post;
 	doc := frontmatter;
 	while doc.count > 0 {
@@ -93,13 +127,58 @@ parse_post_frontmatter :: (frontmatter: string) -> Post {
 			case "description";
 				post.description = value;
 			case;
-				log_error("Unknown key in frontmatter (key: %, value: %)", key, value);
+				log_error("Unknown key in post frontmatter (key: %, value: %)", key, value);
 		}
 
 		skip_line(*doc);
 	}
 
 	return post;
+}
+
+parse_project_frontmatter :: (frontmatter: string) -> Project {
+	project: Project;
+	doc := frontmatter;
+	while doc.count > 0 {
+		key := doc;
+		while !starts_with(doc, ": ") advance(*doc);
+		key.count -= doc.count;
+		advance(*doc, 2);
+
+		value := doc;
+		advance_to_newline(*doc);
+		value.count -= doc.count;
+
+		// There's probably a magic-metaprogram-thing to do to write into the projects, but i'd rather do the easy thing for now
+		if key == {
+			case "title";
+				project.title = value;
+			case "slug";
+				project.slug = value;
+			case "pubDatetime";
+				ct: Calendar_Time;
+				splitted := split(value, "-");
+				project.pub_date_time.year = to_integer(splitted[0]).(s32);
+				project.pub_date_time.month_starting_at_0 = (to_integer(splitted[1]) - 1).(s8);
+				project.pub_date_time.day_of_month_starting_at_0 = (to_integer(splitted[2]) - 1).(s8);
+			case "description";
+				project.description = value;
+			case "heroImage";
+				project.hero_image = value;
+			case "teamSize";
+				project.team_size = to_integer(value);
+			case "toolsUsed";
+				project.tools_used = value;
+			case "timeFrame";
+				project.time_frame = value;
+			case;
+				log_error("Unknown key in project frontmatter (key: %, value: %)", key, value);
+		}
+
+		skip_line(*doc);
+	}
+
+	return project;
 }
 
 render_jaitml :: (path: string) -> string, bool {
@@ -151,7 +230,7 @@ render_jaitml :: (path: string) -> string, bool {
 	return builder_to_string(*result), true;
 }
 
-execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code,null) #expand {
+execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code {}) #expand {
 	jaitml_string_builder: String_Builder;
 	echo :: (format_string: string, args: ..Any) #expand {
 		print_to_builder(*jaitml_string_builder, format_string, ..args);
@@ -196,7 +275,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 
 	make_directory_if_it_does_not_exist(BUILD_DIR);
 	make_directory_if_it_does_not_exist(tprint("%posts", BUILD_DIR));
-
+	make_directory_if_it_does_not_exist(tprint("%projects", BUILD_DIR));
 
 	#insert -> string {
 		sb: String_Builder;
@@ -207,8 +286,19 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 		return builder_to_string(*sb);
 	};
 
+	#insert -> string {
+		sb: String_Builder;
+		for projects {
+			print_to_builder(*sb, "title = \"% - Fabian Huber\";", it.title);
+			print_to_builder(*sb, "execute_jaitml(\"src/project.html.jaitml\", tprint(\"\%projects/%/index.html\", BUILD_DIR), #code { PROJECT_INDEX :: %; });", it.slug, it_index);
+		}
+		return builder_to_string(*sb);
+	};
+
 	title = "Fabian Huber";
-	execute_jaitml("src/index.html.jaitml", tprint("%index.html", BUILD_DIR), #code { TITLE :: "Fabian Huber"; });
+	execute_jaitml("src/index.html.jaitml", tprint("%index.html", BUILD_DIR));
 	title = "Posts - Fabian Huber";
-	execute_jaitml("src/posts.html.jaitml", tprint("%/posts/index.html", BUILD_DIR), #code { TITLE :: "Posts"; });
+	execute_jaitml("src/posts.html.jaitml", tprint("%/posts/index.html", BUILD_DIR));
+	title = "Projects - Fabian Huber";
+	execute_jaitml("src/projects.html.jaitml", tprint("%/projects/index.html", BUILD_DIR));
 }
