@@ -443,20 +443,27 @@ svg {
 }
 
 .gbt2 {
-	max-width: 800px;
+	width: 100%;
+	max-width: 100%;
 	margin: 0 0 0.5em;
 	padding: 0;
-	text-align: justify;
 }
 
 .gbt2 tr {
-	line-height: 1.1;
+	line-height: 1.2;
 	vertical-align: top;
 }
 
 .gbt2 tr td:first-child {
 	text-align: right;
 	padding-right: 0.75em;
+	white-space: nowrap;
+	width: 1%;
+}
+
+.gbt2 tr td:last-child {
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 ul.skills {
@@ -485,6 +492,6 @@ article h1 a:hover, article h2 a:hover, article h3 a:hover {
 
 article h1 a:hover:before, article h2 a:hover:before, article h3 a:hover:before {
 	content: '§ ';
-	margin-left: -0.75em;
+	margin-left: -0.5em;
 	display:inline;
 }

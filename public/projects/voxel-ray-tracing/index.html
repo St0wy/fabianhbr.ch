@@ -63,14 +63,6 @@ and see the source of the <a href="https://gitlab.com/Stowy/bachelor-thesis">the
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>
-<!--<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
-<script>
-	mediumZoom('p img', {
-		margin: 24,
-		background: '#000000CC'
-	})
-</script>-->
-
 <div id="lightbox" class="lightbox">
 	<img id="lightbox-img" src="" alt="Zoomed image" />
 </div>
@@ -82,29 +74,27 @@ and see the source of the <a href="https://gitlab.com/Stowy/bachelor-thesis">the
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
 <script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
-
-<script>hljs.highlightAll();</script>
 <script>
+	hljs.highlightAll();
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
 	const images = document.querySelectorAll('article img');
 
-	// Loop through all images and add a click event
 	images.forEach(img => {
 		img.addEventListener('click', function() {
-			lightboxImg.src = this.src; // Copy the clicked image's source
-			lightbox.style.display = 'block'; // Show the lightbox
+			lightboxImg.src = this.src;
+			lightbox.style.display = 'block';
 		});
 	});
 
-	// Close the lightbox when clicking anywhere on it
 	lightbox.addEventListener('click', function() {
 		lightbox.style.display = 'none';
-		lightboxImg.src = ""; // Clear out the source
+		lightboxImg.src = "";
 	});
 
 	(function addHeadingLinks(){
 		let article = document.querySelectorAll('article')[0];
+		if (!article) return;
 		let headings = article.querySelectorAll('h1, h2, h3');
 		let seenIds = new Set();
 		headings.forEach(function(heading){

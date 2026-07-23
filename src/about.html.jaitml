@@ -46,10 +46,10 @@
 	<h2>Contact Info</h2>
 	<table class="gbt2">
 		<tbody>
-			<tr><td>  Email:</td><td><a href="#">fabianhbr <em>[at]</em> protonmail <em>[dot]</em> ch</a></td></tr>
+			<tr><td>Email:</td><td><a href="#">fabianhbr <em>[at]</em> protonmail <em>[dot]</em> ch</a></td></tr>
 			<tr><td>Bluesky:</td><td><a href="//bsky.app/profile/stowy.ch">@stowy.ch</a></td></tr>
 			<tr><td>Mastodon:</td><td><a href="//mastodon.gamedev.place/@stowy">@stowy@mastodon.gamedev.place</a></td></tr>
-			<tr><td> GitHub:</td><td><a href="//github.com/St0wy">github.com/St0wy</a></td></tr>
+			<tr><td>GitHub:</td><td><a href="//github.com/St0wy">github.com/St0wy</a></td></tr>
 		</tbody>
 	</table>
 </main>
