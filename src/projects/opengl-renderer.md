@@ -9,12 +9,15 @@ timeFrame: 3 Months
 toolsUsed: C++ / OpenGL
 ---
 
-<div class="grid place-items-center">
-	<video width="640" height="480" loop muted autoplay controls>
-		<source src="/assets/images/opengl-scene/demo_opengl.mp4" type="video/mp4" />
-		Your browser does not support the video tag.
-	</video>
-</div>
+<iframe
+	class="video"
+	src="https://www.youtube-nocookie.com/embed/CiWBBy4aWhk?&autoplay=1&autohide=1&mute=1&modestbranding=1&playsinline=1"
+	title="YouTube video player"
+	autoplay="1"
+	frameborder="0"
+	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+	allowfullscreen
+></iframe>
 
 This is a **deferred PBR renderer** made in **C++** with **OpenGL** during the Computer Graphics class at SAE Institute.
 
