@@ -42,7 +42,7 @@ All of those facts made me move to a more suited format: <a href="https://www.kh
 <a href="https://github.com/CesiumGS/obj2gltf">obj2gltf</a> allowed me to convert all my OBJ models to glTF, and it even has
 the option to merge the ambient occlusion, roughness and metallic (ARM) maps into one file.</p><p>With my glTFs in hand, I had to adapt my asset loading code.
 As I still wanted to support models that have three separate textures for the ARM maps, I decided to check if the model had an ARM map.
-But to my surprise, Assimp doesn&#39;t have an option to check this, which means the only way to know is to check the texture type <code>aiTextureType</code>.
+But to my surprise, Assimp doesn&#39;t have an option to check this, which means the only way to know is to check the texture type <code>aiTextureType_UNKNOWN</code>.
 To make things worse, this ARM map counts as a roughness map and as a metalness.
 So if you&#39;re not careful, you might load the map three times.</p><p>But with everything I needed to know in mind, I could write my material loading function.</p><pre><code class="language-cpp">// The function returns a vector because I later need to see if the meshes
 // that I&#39;m loading have a material that I can handle
@@ -83,12 +83,12 @@ std::vector&lt;std::size_t&gt; stw::MaterialManager::LoadMaterialsFromAssimpScen
 
 	return assimpMaterialIndicesLoaded;
 }</code></pre><h3>Textures</h3><p>Textures where way easier to handle than 3D models.
-All you have to do is give a path to <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb</a>, get the <code>char*</code>, give it to OpenGL and tada!</p><p>However, this was, unfortunately, the slowest part of the asset loading code.
+All you have to do is give a path to <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb_image</a>, get the <code>char*</code>, give it to OpenGL and tada!</p><p>However, this was, unfortunately, the slowest part of the asset loading code.
 I would often spend 20ms on Assimp&#39;s code and my code reading Assimps data and then 2200ms on texture loading.</p><p>This is why I then decided to use another format: KTX.
 This format has the benefit to be readable by the GPU, which gives way better performance when loading it and giving it to the GPU.
 It also has the benefit of having some metadata on how the format should be read by OpenGL (such as if it&#39;s in linear space or in SRGB).
 I was also able to bake the mipmaps directly inside the file and to compress it to make it even smaller than the PNG (from 33 MB to 8 MB).</p><p>To add to the list of great things of this format, the loading code was really easy to implement thanks to Khronos&#39; <a href="https://github.com/KhronosGroup/KTX-Software">libktx</a>.
-All you have to do is load the KTX with <code>ktxTexture</code> and then give this file to <code>ktxTexture</code>.
+All you have to do is load the KTX with <code>ktxTexture_CreateFromNamedFile</code> and then give this file to <code>ktxTexture_GLUpload</code>.
 It will then give back to you the OpenGL id that you can use for rendering.</p><h2>Scene Graph</h2><p>A scene graph is a way to organise elements in a scene by having elements that are children of other elements.
 If the parent moves, all of its children must move in the same way.</p><p>Having already implemented a scene graph on my C# CPU rasterizer project <a href="https://3dviewer.readthedocs.io/fr/latest/analyseOrganique.html#graphe-de-scene">3D Viewer</a>,
 I had a rough idea of what I needed to do to implement it.
@@ -171,7 +171,7 @@ This map basically has the material and mesh ids as a key.
 This means that we can then draw each element with their respective transforms.
 One thing I don&#39;t like with this implementation is the <code>std::vector</code> as value in the hash map, as it forces to do allocations for each element in the scene.
 Unfortunately, I couldn&#39;t come up with a better way to do it.</p><h2>Renderer Class</h2><p>One thing that helped quite a lot in this project was having a renderer class where I could implement the different computer graphics concepts away from the &quot;user&quot; code
-(this isn&#39;t a library, but you get what I mean).</p><p>This class contains:</p><ul><li>OpenGL&#39;s &quot;global functions&quot; (for ex. <code>glClear</code>, <code>glFrontFace</code>)</li><li>Light management (you can add point and directional lights to it)</li><li>All of the other managers (MaterialManager, TextureManager, SceneGraph, ...)</li><li>The framebuffers and pipelines (also known as the shader class in LearnOpenGL)</li></ul><p>I&#39;m not gonna show code that&#39;s inside this class as it&#39;s kinda messy and the .cpp is 1409 lines long as of writing (oops 😅).
+(this isn&#39;t a library, but you get what I mean).</p><p>This class contains:</p><ul><li>OpenGL&#39;s &quot;global functions&quot; (for ex. <code>glClear</code>, </li><li>Light management (you can add point and directional lights to it)</li><li>All of the other managers (MaterialManager, TextureManager, SceneGraph, ...)</li><li>The framebuffers and pipelines (also known as the shader class in LearnOpenGL)</li></ul><p>I&#39;m not gonna show code that&#39;s inside this class as it&#39;s kinda messy and the .cpp is 1409 lines long as of writing (oops 😅).
 But the result of this is that using it is really convenient:</p><pre><code class="language-cpp">void Init() {
 	m_Renderer-&gt;Init(screenSize);
 														// Flag to flip UVs
@@ -208,7 +208,7 @@ This is where my material system comes into place.</p><p>First, each material is
 	std::size_t baseColorMapIndex{};
 	std::size_t normalMapIndex{};
 	std::size_t armMapIndex{};
-};</code></pre><p>Then each material is placed in a <a href="https://en.cppreference.com/w/cpp/utility/variant"><code>std::variant</code></a>.
+};</code></pre><p>Then each material is placed in a <a href="https://en.cppreference.com/w/cpp/utility/variant"></a>.
 I chose this class because it&#39;s the closest thing we have in C++ to Rust&#39;s wonderful enums.</p><pre><code class="language-cpp">using Material = std::variant&lt;InvalidMaterial, MaterialPbrNormal, MaterialPbrNormalNoAo, MaterialPbrNormalArm&gt;;</code></pre><p>This means that when I need to bind the material&#39;s textures for the geometry pass, I can use <code>std::visit</code>
 which will call the correct lambda for the current material.</p><pre><code class="language-cpp">using GBufferPipelinesArray =
 	std::array&lt;std::reference_wrapper&lt;stw::Pipeline&gt;, MaterialCount&gt;;
@@ -291,7 +291,7 @@ This allows to only update the pixels impacted by the light and saves on perform
 (In my case I use Narkowicz ACES).</p><p><img src="/assets/images/opengl-scene/final.png" alt="final" /></p><p>Et voilà! It took a lot of effort, but we have our final image.</p><h2>Conclusion</h2><p>I&#39;m really proud of what I&#39;ve done.
 Computer graphics is the domain where I want to work and this project taught me a lot.
 I think I put in a lot of work, and the final result shows it.</p><p>That being said, there are still some things I could improve.
-Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add Frustum Culling</li><li>Add a bit of multi-threading somewhere</li><li>Do some benchmarks and analyze the code with tracy to optimize it a bit (this one is just for fun)</li></ul><p>You can find the code of this project on my <a href="https://github.com/St0wy/opengl-scene">GitHub</a>.</p><p>In the longer term, I really want to explore other graphics API using other programming languages.</p><p>Right now my goals are:</p><ul><li>Direct3D 11: Odin</li><li>Direct3D 12: Zig</li><li>Vulkan: Rust</li></ul><p>I hope I&#39;ll be able to work on these projects and maybe write a blogpost about it!</p><p><em>now some bonus funny visual bugs</em></p><p><img src="/assets/images/opengl-scene/bobomb.jpg" alt="bob omb" /></p><p><img src="/assets/images/opengl-scene/cursed.png" alt="cursed" /></p><p><img src="/assets/images/opengl-scene/spike.png" alt="spike" /></p><p><em>and the full IBL developed integral because why not</em></p><p><img src="/assets/images/opengl-scene/ibl.png" alt="ibl" /></p>
+Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add Frustum Culling</li><li>Add a bit of multi-threading somewhere</li><li>Do some benchmarks and analyze the code with tracy to optimize it a bit (this one is just for fun)</li></ul><p>You can find the code of this project on my <a href="https://github.com/St0wy/opengl-scene">GitHub</a>.</p><p>In the longer term, I really want to explore other graphics API using other programming languages.</p><p>Right now my goals are:</p><ul><li>Direct3D 11: Odin</li><li>Direct3D 12: Zig</li><li>Vulkan: Rust</li></ul><p>I hope I&#39;ll be able to work on these projects and maybe write a blogpost about it!</p><p></p><p><img src="/assets/images/opengl-scene/bobomb.jpg" alt="bob omb" /></p><p><img src="/assets/images/opengl-scene/cursed.png" alt="cursed" /></p><p><img src="/assets/images/opengl-scene/spike.png" alt="spike" /></p><p></p><p><img src="/assets/images/opengl-scene/ibl.png" alt="ibl" /></p>
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>

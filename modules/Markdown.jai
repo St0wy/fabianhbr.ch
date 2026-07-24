@@ -418,11 +418,12 @@ parse_inline :: (node: *AstNode) {
 	parent_is_code := ifx node.parent && node.parent.kind == .CodeBlock then true else false;
 	if node.kind == .Text && !parent_is_code {
 		doc := node.content;
+		previous_char: u8;
 		while doc.count > 0 {
 			is_strong := starts_with(doc, "**");
 			is_em := doc[0] == "_";
 			is_code := doc[0] == "`";
-			if is_strong || is_em || is_code {
+			if !is_alnum(previous_char) && (is_strong || is_em || is_code) {
 				start_doc := doc;
 				kind := ifx is_strong then NodeKind.Strong else ifx is_em then NodeKind.Emphasis else ifx is_code then NodeKind.CodeInline;
 				node.content.count -= doc.count;
@@ -430,9 +431,15 @@ parse_inline :: (node: *AstNode) {
 				content := doc;
 				found_closing_symbol :=  false;
 				while doc.count > 0 {
-					if is_strong && starts_with(doc, "**") || is_em && doc[0] == "_" || is_code && doc[0] == "`" {
-						found_closing_symbol = true;
-						break;
+					close_strong := is_strong && starts_with(doc, "**");
+					close_em := is_em && doc[0] == "_";
+					close_code := is_code && doc[0] == "`";
+					if close_strong || close_code || close_code {
+						offset := ifx close_strong 2 else 1;
+						if doc.count > offset + 1 && !is_alnum(doc[offset]) {
+							found_closing_symbol = true;
+							break;
+						}
 					}
 					advance(*doc);
 				}
@@ -557,6 +564,8 @@ parse_inline :: (node: *AstNode) {
 
 				doc = start_doc;
 			}
+
+			previous_char = doc[0];
 			advance(*doc);
 		}
 	}
