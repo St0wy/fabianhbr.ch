@@ -436,10 +436,11 @@ parse_inline :: (node: *AstNode) {
 					close_code := is_code && doc[0] == "`";
 					if close_strong || close_code || close_code {
 						offset := ifx close_strong 2 else 1;
-						if doc.count > offset + 1 && !is_alnum(doc[offset]) {
-							found_closing_symbol = true;
-							break;
+						found_closing_symbol = true;
+						if doc.count > offset + 1 && is_alnum(doc[offset]) {
+							found_closing_symbol = false;
 						}
+						if found_closing_symbol then break;
 					}
 					advance(*doc);
 				}

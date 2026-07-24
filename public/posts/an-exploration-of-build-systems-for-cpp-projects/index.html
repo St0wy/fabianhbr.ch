@@ -104,14 +104,14 @@ CALL build.bat %1
 POPD
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% &amp;&amp; exit)
 
-ECHO All assemblies built successfully.</code></pre><p>And that&#39;s it for Batch. So is it something that I would recommend ?</p><h3>Pros</h3><ul><li><strong>Platform specific</strong> : we don&#39;t have to bother with being able to build on Linux</li><li></li></ul><h3>Cons</h3><ul><li><strong>Platform specific</strong> : we have to rewrite the script in Bash if we want it to work on Linux or MacOS</li><li><strong>Ugly syntax</strong> : I know that this is more of a personal opinion, but I think Batch&#39;s syntax is quite</li></ul><ul><li><strong>Build is not cached</strong> : Every time we build the project, everything is rebuilt from scratch, which takes time.</li></ul><p>So since Powershell is kind of the modern version of Batch,
+ECHO All assemblies built successfully.</code></pre><p>And that&#39;s it for Batch. So is it something that I would recommend ?</p><h3>Pros</h3><ul><li><strong>Platform specific</strong> : we don&#39;t have to bother with being able to build on Linux</li><li><strong>Relatively short</strong></li></ul><h3>Cons</h3><ul><li><strong>Platform specific</strong> : we have to rewrite the script in Bash if we want it to work on Linux or MacOS</li><li><strong>Ugly syntax</strong> : I know that this is more of a personal opinion, but I think Batch&#39;s syntax is quite</li></ul><ul><li><strong>Build is not cached</strong> : Every time we build the project, everything is rebuilt from scratch, which takes time.</li></ul><p>So since Powershell is kind of the modern version of Batch,
 I thought that it might have a better syntax than it and so I decided to try it next.</p><h2>Powershell</h2><p>I have to confess something for this chapter.
 I have never actually written a Powershell script in my life, so I thought it could be a good idea to see how
 ChatGPT would translate my Batch script into Powershell.
 And believe it or not, but the script that it gave me worked on the first try !</p><p>So how does it differ ?
 Basically, to find the <code>.cpp</code> files, I was able to use the <code>Get-ChildItem</code> command instead of the weird for loop.
 Then, since Powershell can&#39;t insert variables when calling a command, I had to create a string with the command in it
-and then call it with </p><pre><code class="language-ps1">$isRelease = $false
+and then call it with <code>Inkove-Expression</code>.</p><pre><code class="language-ps1">$isRelease = $false
 
 # Check if we want to build in release and save it to a variable
 if ($args[0] -eq &quot;release&quot;) {
@@ -144,7 +144,7 @@ else {
 
 $cppFiles = $cppFilenames -join &quot; &quot;
 $buildCommand = &quot;clang++ $cppFiles $compilerFlags -o ..\bin\$assembly.dll $defines $includeFlags $linkerFlags&quot;
-Invoke-Expression $buildCommand</code></pre><p>As before, for the testbed, it&#39;s just different flags, and I won&#39;t talk about the build_all.ps1 script since it&#39;s not that interesting.</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong> : I think the syntax is way more pleasant and I could see myself writing a bigger script with it</li><li><strong>Platform specific(ish)</strong> : I know that technically Powershell can run on Linux, but I haven&#39;t tried it and it seems too cursed to make me wanna try.</li></ul><h3>Cons</h3><ul><li></li><li></li></ul><h2>Nushell (simple)</h2><p><a href="https://www.nushell.sh/">Nushell</a> is a cross-platform shell written in rust.
+Invoke-Expression $buildCommand</code></pre><p>As before, for the testbed, it&#39;s just different flags, and I won&#39;t talk about the build_all.ps1 script since it&#39;s not that interesting.</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong> : I think the syntax is way more pleasant and I could see myself writing a bigger script with it</li><li><strong>Platform specific(ish)</strong> : I know that technically Powershell can run on Linux, but I haven&#39;t tried it and it seems too cursed to make me wanna try.</li></ul><h3>Cons</h3><ul><li><strong>Platform specific(ish)</strong></li><li><strong>Build is not cached</strong></li></ul><h2>Nushell (simple)</h2><p><a href="https://www.nushell.sh/">Nushell</a> is a cross-platform shell written in rust.
 Since I wanted to write a script that could work on both Windows and Linux, I thought it could be interesting to try Nushell.</p><p>I actually wrote two versions of the script, one that follows the same structure as the previous ones (simple)
 and one where I defined a custom command to reduce code duplication (improved).</p><p>As you can see below, in Nushell you must have a main function in scripts,
 which is super nice because it allows to have type-safe parameters.
@@ -166,7 +166,7 @@ def main [input?: string] {
 
 	clang++ $cppFiles $compilerFlags -o $&#39;../bin/($assembly).dll&#39; $defines $includeFlags $linkerFlags
 }</code></pre><p>As you can see I haven&#39;t yet made the changes to make the script cross-platform, it&#39;s really a translation of the previous scripts.
-But it already brings improvements both when using the script and when writing it.</p><h3>Pros</h3><ul><li></li><li><strong>Type-safety</strong> : Both the parameters and the variables of the script are type-safe</li><li></li></ul><h3>Cons</h3><ul><li></li><li><strong>Code duplication</strong> : Both the library and the exe have similar build script</li><li></li></ul><p>The next version of the script will fix the portability, code duplication and caching problem !</p><h2>Nushell (improved)</h2><p>To fix the code duplication problem, I decided to create a <code>build</code> command that would be located in a <code>common.nu</code> file.
+But it already brings improvements both when using the script and when writing it.</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong> : Both the parameters and the variables of the script are type-safe</li><li><strong>Cross-platform(ish)</strong></li></ul><h3>Cons</h3><ul><li><strong>Not yet really cross-platform</strong></li><li><strong>Code duplication</strong> : Both the library and the exe have similar build script</li><li><strong>Build is not cached</strong></li></ul><p>The next version of the script will fix the portability, code duplication and caching problem !</p><h2>Nushell (improved)</h2><p>To fix the code duplication problem, I decided to create a <code>build</code> command that would be located in a <code>common.nu</code> file.
 Then, each project can source this file and call the build command with their own parameters.
 The structure of the project then looks like this :</p><pre><code class="language-plaintext">build_system_tests/
 ├── build/
@@ -213,7 +213,7 @@ def main [buildType: string = &#39;debug&#39;] {
 First we check if we&#39;re building in release and the we split the compiler name.</p><pre><code class="language-nushell">let isRelease = $buildType == &#39;release&#39;
 # We need to split the compiler to handle cases such as
 # &quot;zig c++&quot; because run-external doesn&#39;t like spaces
-let splitCompiler = ($compiler | split row &#39; &#39;)</code></pre><p>I will go into more detail on why we split the compiler name once we arrive at the part with </p><p>Then we need to define the name of the assembly.
+let splitCompiler = ($compiler | split row &#39; &#39;)</code></pre><p>I will go into more detail on why we split the compiler name once we arrive at the part with <code>run-external</code>.</p><p>Then we need to define the name of the assembly.
 It will depend on whether we&#39;re on windows or linux and on whether we&#39;re building a library or an executable.
 Then the path is split then joined, this is to have a path that doesn&#39;t mix <code>/</code> and <code>\</code>.
 This isn&#39;t strictly necessary, but I did it just to be on the safe side.</p><pre><code class="language-nushell">let assemblyOutputFile = if $targetType == &#39;executable&#39; {
@@ -233,7 +233,7 @@ This isn&#39;t strictly necessary, but I did it just to be on the safe side.</p>
 }
 let assemblyOutputFile = $assemblyOutputFile  | path split | path join</code></pre><p>Then we get the <code>.cpp</code> files and get their path relative to the source directory.</p><pre><code class="language-nushell">let cppFiles = glob **/*.cpp
 let relativeCppFiles = ($cppFiles  | path relative-to $sourceDirectory | path parse)</code></pre><p>And now we will build each <code>.cpp</code> file separately into a <code>.o</code> file.
-We do that so that we can cache the compilation of each file and also parallelize this step using </p><pre><code class="language-nushell"># Build every .cpp to .o and get a list of every .o
+We do that so that we can cache the compilation of each file and also parallelize this step using <code>par-each</code>.</p><pre><code class="language-nushell"># Build every .cpp to .o and get a list of every .o
 let objectFiles = $relativeCppFiles | par-each {|relativeCppFile| (
 	# Convert from path object to string
 	let inputFile = ($relativeCppFile | path join);
@@ -260,8 +260,8 @@ it will try to find an executable with this exact name and fail.
 But if you&#39;re familiar with Nushell, you might wonder why I don&#39;t use the syntax with <code>^</code> to run the command ?
 Because yes I could write</p><pre><code class="language-nushell">^$compiler -c -o $outputFileWithDir # ...</code></pre><p>But this had the problem where the command would return before it was done with building the <code>.o</code>,
 which was then a problem when the linker tried reading <code>.o</code> files that didn&#39;t exist.
-The only way I find to mitigate this was to use </p><p>I guess this is just what happens when you use something new like Nushell, bugs will happen.</p><p>Anyway, now that the <code>.cpp</code> files are built, we can link them.</p><pre><code class="language-nushell">run-external $splitCompiler.0 ($splitCompiler | range 1..) &#39;-o&#39; $assemblyOutputFile $objectFiles $linkerFlags $includeFlags $defines $compilerFlags</code></pre><p>And tada !
-We have a project that can build on both Windows and Linux and that supports caching !</p><h3>Pros</h3><ul><li></li><li></li><li></li><li></li></ul><h3>Cons</h3><ul><li><strong>Bugs</strong> : I had to go through some hoops to avoid bugs from Nushell</li></ul><p>But what if we could have a build system with a nice syntax, type safety, portability, cached builds and no bugs ?
+The only way I find to mitigate this was to use <code>run-external</code>.</p><p>I guess this is just what happens when you use something new like Nushell, bugs will happen.</p><p>Anyway, now that the <code>.cpp</code> files are built, we can link them.</p><pre><code class="language-nushell">run-external $splitCompiler.0 ($splitCompiler | range 1..) &#39;-o&#39; $assemblyOutputFile $objectFiles $linkerFlags $includeFlags $defines $compilerFlags</code></pre><p>And tada !
+We have a project that can build on both Windows and Linux and that supports caching !</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong></li><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong></li></ul><h3>Cons</h3><ul><li><strong>Bugs</strong> : I had to go through some hoops to avoid bugs from Nushell</li></ul><p>But what if we could have a build system with a nice syntax, type safety, portability, cached builds and no bugs ?
 Well, this is where Zig comes in !</p><h2>Zig</h2><p>Zig is a programming language that places itself as a C successor, but the toolchain also comes with a C++ compiler !</p><p>You can create a <code>build.zig</code> file in your project with a <code>build</code> function and zig will build this file and then run it.
 This will then build the project.</p><pre><code class="language-zig">const std = @import(&quot;std&quot;);
 const Builder = @import(&quot;std&quot;).build.Builder;
@@ -312,7 +312,7 @@ const run_step = b.step(&quot;run&quot;, &quot;Run the app&quot;);
 run_step.dependOn(&amp;run_cmd.step);</code></pre><p>And that&#39;s all we have to do to build out project with Zig.
 One nice thing that comes with this approach is that Zig comes with Windows headers.
 This means that if you build an app that uses the Windows API, you don&#39;t always have to install Visual Studio
-(although that could mean you can&#39;t use some modern features).</p><h3>Pros</h3><ul><li></li><li></li><li></li><li><strong>Cached build</strong> : Zig has its own cache</li><li></li></ul><h3>Cons</h3><ul><li></li></ul><h2>CMake</h2><p>And to close this blogpost, let&#39;s take a look at the C++ industry standard : CMake.</p><p>Well first the top level <code>CMakeLists.txt</code> file is pretty simple, we just create the project and add the subdirectories.</p><pre><code class="language-cmake">cmake_minimum_required(VERSION 3.27)
+(although that could mean you can&#39;t use some modern features).</p><h3>Pros</h3><ul><li><strong>Nice syntax</strong></li><li><strong>Type-safety</strong></li><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong> : Zig has its own cache</li><li><strong>No need for Visual Studio for Windows Headers</strong></li></ul><h3>Cons</h3><ul><li><strong>No LTO on Windows</strong></li></ul><h2>CMake</h2><p>And to close this blogpost, let&#39;s take a look at the C++ industry standard : CMake.</p><p>Well first the top level <code>CMakeLists.txt</code> file is pretty simple, we just create the project and add the subdirectories.</p><pre><code class="language-cmake">cmake_minimum_required(VERSION 3.27)
 
 project(&quot;BuildSystemTests&quot;)
 
@@ -336,7 +336,7 @@ set(public_headers &quot;src/math/Vector2.hpp&quot;)
 target_sources(StowyPhysicsEngine PRIVATE &quot;src/math/Vector2.cpp&quot; ${public_headers})
 
 target_include_directories(StowyPhysicsEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/)
-target_compile_definitions(StowyPhysicsEngine PUBLIC STWCMAKE)</code></pre><h3>Pros</h3><ul><li></li><li><strong>Cached build</strong> : Will depend on what kind of project CMake generates</li><li></li><li></li><li></li></ul><h3>Cons</h3><ul><li></li><li></li></ul><h2>Conclusion</h2><p>So after looking at everything, what will I use in my next C++ project ?
+target_compile_definitions(StowyPhysicsEngine PUBLIC STWCMAKE)</code></pre><h3>Pros</h3><ul><li><strong>Cross-platform</strong></li><li><strong>Cached build</strong> : Will depend on what kind of project CMake generates</li><li><strong>Compiler Independent</strong></li><li><strong>Standard of the language</strong></li><li><strong>Very easy to include libraries that use CMake</strong></li></ul><h3>Cons</h3><ul><li><strong>Hard to learn</strong></li><li><strong>Weird syntax</strong></li></ul><h2>Conclusion</h2><p>So after looking at everything, what will I use in my next C++ project ?
 I think I&#39;m gonna stay with CMake, the fact that it&#39;s so easy to use 3rd party code with it makes it a no brainer.
 Also, now that I&#39;ve learned to use it, I think it&#39;s the simplest way to get things done.
 I lost so much time debugging weird things when I used Nushell and Zig that it made me like CMake.

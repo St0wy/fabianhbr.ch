@@ -171,7 +171,7 @@ This map basically has the material and mesh ids as a key.
 This means that we can then draw each element with their respective transforms.
 One thing I don&#39;t like with this implementation is the <code>std::vector</code> as value in the hash map, as it forces to do allocations for each element in the scene.
 Unfortunately, I couldn&#39;t come up with a better way to do it.</p><h2>Renderer Class</h2><p>One thing that helped quite a lot in this project was having a renderer class where I could implement the different computer graphics concepts away from the &quot;user&quot; code
-(this isn&#39;t a library, but you get what I mean).</p><p>This class contains:</p><ul><li>OpenGL&#39;s &quot;global functions&quot; (for ex. <code>glClear</code>, </li><li>Light management (you can add point and directional lights to it)</li><li>All of the other managers (MaterialManager, TextureManager, SceneGraph, ...)</li><li>The framebuffers and pipelines (also known as the shader class in LearnOpenGL)</li></ul><p>I&#39;m not gonna show code that&#39;s inside this class as it&#39;s kinda messy and the .cpp is 1409 lines long as of writing (oops 😅).
+(this isn&#39;t a library, but you get what I mean).</p><p>This class contains:</p><ul><li>OpenGL&#39;s &quot;global functions&quot; (for ex. <code>glClear</code>, <code>glFrontFace</code>)</li><li>Light management (you can add point and directional lights to it)</li><li>All of the other managers (MaterialManager, TextureManager, SceneGraph, ...)</li><li>The framebuffers and pipelines (also known as the shader class in LearnOpenGL)</li></ul><p>I&#39;m not gonna show code that&#39;s inside this class as it&#39;s kinda messy and the .cpp is 1409 lines long as of writing (oops 😅).
 But the result of this is that using it is really convenient:</p><pre><code class="language-cpp">void Init() {
 	m_Renderer-&gt;Init(screenSize);
 														// Flag to flip UVs
@@ -208,7 +208,7 @@ This is where my material system comes into place.</p><p>First, each material is
 	std::size_t baseColorMapIndex{};
 	std::size_t normalMapIndex{};
 	std::size_t armMapIndex{};
-};</code></pre><p>Then each material is placed in a <a href="https://en.cppreference.com/w/cpp/utility/variant"></a>.
+};</code></pre><p>Then each material is placed in a <a href="https://en.cppreference.com/w/cpp/utility/variant"><code>std::variant</code></a>.
 I chose this class because it&#39;s the closest thing we have in C++ to Rust&#39;s wonderful enums.</p><pre><code class="language-cpp">using Material = std::variant&lt;InvalidMaterial, MaterialPbrNormal, MaterialPbrNormalNoAo, MaterialPbrNormalArm&gt;;</code></pre><p>This means that when I need to bind the material&#39;s textures for the geometry pass, I can use <code>std::visit</code>
 which will call the correct lambda for the current material.</p><pre><code class="language-cpp">using GBufferPipelinesArray =
 	std::array&lt;std::reference_wrapper&lt;stw::Pipeline&gt;, MaterialCount&gt;;
