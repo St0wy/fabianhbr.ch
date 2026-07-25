@@ -100,6 +100,8 @@ private:
     RollbackManager&amp; _rollbackManager;
     GameManager&amp; _gameManager;
 };</code></pre><p>The <code>FallingWallSpawnInstructions</code> is where the information sent by the packet is stored. In the fixed update, the code checks if the last validate frame is equal to the spawn frame and spawns the wall if yes.</p><p>This setup, in theory, should work well. However, right now it causes desyncs if there&#39;s any delay between the client and the server. I don&#39;t know what causes it and the only option to play the game for now is through the debug.exe without any delay.</p><h2>Conclusion</h2><p>To conclude, in this blog post I talked about how I integrated and fixed a bug in my physics engine, how I added layers to it using Bit-fields and how I implemented and spawned falling walls in a &quot;Server authoritative&quot; way.</p>
+		<hr />
+		
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>
@@ -115,6 +117,9 @@ private:
 <script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
+<script type="module">
+  import "https://esm.sh/bluesky-comments-tag/load";
+</script>
 <script>
 	hljs.highlightAll();
 

@@ -204,6 +204,8 @@ Well, we can !</p><p>Although compiling in release already makes the code a lot 
 Most of them are described in <a href="https://nnethercote.github.io/perf-book/build-configuration.html">The Rust Performance Book</a>.</p><p>You can read the book if you want to know more, but here is a quick summary of each options :</p><ul><li>LTO (Link-time Optimization) : Adds optimizations when the program is getting linked</li><li>Codegen Units : By default the Rust compiler tries to parallelize the compilation of your code. You can force it to only use one codegen unit so that it can find more optimizations.</li><li>CPU Specific Instructions : You can tell the program to compile for the current architecture to potentially use more modern instructions that could be faster.</li><li>Abort on <code>panic!</code> : Rust doesn&#39;t have exceptions, but it does have a panics, that can be catched. If you don&#39;t catch them, you can disable it to gain some performance.</li></ul><h3>Speed</h3><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Faster Random</strong></td><td>485,97 ms</td><td>7418,7 ms</td><td>3239,9 ms</td><td>1386,8 ms</td></tr><tr><td><strong>Compiler Flags</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table><p>This doesn&#39;t change much for the cornell box (3,73% faster) but for the big scene it&#39;s 20,84% faster !</p><h2>Conclusion</h2><table><thead><tr><th></th><th>Three Spheres</th><th>Big Scene</th><th>Cornell Box</th><th>Perlin and Earth</th></tr></thead><tbody><tr><td><strong>Naive</strong></td><td>3624,3 ms</td><td>405330 ms</td><td>35313 ms</td><td>18502 ms</td></tr><tr><td><strong>Optimized version</strong></td><td>409,45 ms</td><td>5872,5 ms</td><td>3119 ms</td><td>1289,1 ms</td></tr></tbody></table><p>That&#39;s quite a big leap in performances !
 Let&#39;s look at it in a more visual way.</p><p><img src="/assets/images/raytracing-optimizations/graph1.png" alt="Graph of the performance improvements" /></p><p>We can&#39;t see much after the multithreading, so let&#39;s zoom in a bit.</p><p><img src="/assets/images/raytracing-optimizations/graph2.png" alt="Graph of the performance improvement" /></p><p>And that&#39;s it for the optimizations !
 It&#39;s not quite real-time, the GPU might be needed for that. And there are probably other ways to improve the project, such as having a better way to handle the BVH.</p><p>Thanks for reading !</p>
+		<hr />
+		
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>
@@ -219,6 +221,9 @@ It&#39;s not quite real-time, the GPU might be needed for that. And there are pr
 <script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
+<script type="module">
+  import "https://esm.sh/bluesky-comments-tag/load";
+</script>
 <script>
 	hljs.highlightAll();
 

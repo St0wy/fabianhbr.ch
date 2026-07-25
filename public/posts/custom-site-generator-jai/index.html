@@ -235,6 +235,11 @@ Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured u
 Most of the time is spent parsing the Markdown, which I&#39;m sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
 I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
+		<hr />
+		
+			<p>Join the conversation by <a href="https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e">replying on Bluesky</a>.</p>
+			<bluesky-comments url="https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e"> </bluesky-comments>
+		
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>
@@ -250,6 +255,9 @@ I hope I can find a satisfying solution for the global state / per page state pr
 <script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
+<script type="module">
+  import "https://esm.sh/bluesky-comments-tag/load";
+</script>
 <script>
 	hljs.highlightAll();
 

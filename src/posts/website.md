@@ -4,6 +4,7 @@ slug: custom-site-generator-jai
 pubDatetime: 2026-07-25
 tags: web, static-site-generator, jai
 description: Why use Jekyll, Hugo, Astro, or Node when you can reinvent the wheel and write a custom templating engine and Markdown parser in Jai?
+blueskyUrl: https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e
 ---
 
 I created my previous portfolio website using [Astro](https://astro.build/), but when it came time to add new stuff to it, 

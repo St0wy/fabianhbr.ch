@@ -505,3 +505,29 @@ article h1 a:hover:before, article h2 a:hover:before, article h3 a:hover:before 
 	margin-left: -0.75em;
 	display:inline;
 }
+
+bluesky-comments {
+	/* Colors */
+	--bluesky-text-color: #111;
+	--bluesky-handle-color: var(--main-color);
+	--bluesky-footer-text-color: rgb(111, 134, 159);
+	--bluesky-bg-color: var(--background-white);
+	--bluesky-hover-bg: var(--background-white);
+	--bluesky-border-color: var(--main-color);
+
+	/* Typography */
+	--bluesky-font-family: var(--font-system);
+	--bluesky-font-size: 20px;
+	--bluesky-footer-font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+	bluesky-comments {
+		--bluesky-handle-color: var(--main-color);
+		--bluesky-text-color: #ddd;
+		--bluesky-footer-text-color: #9ca3af;
+		--bluesky-bg-color: var(--background-dark);
+		--bluesky-hover-bg: var(--background-dark);
+		--bluesky-border-color: var(--main-color);
+	}
+}

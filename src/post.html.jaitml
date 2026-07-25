@@ -10,6 +10,11 @@ post := posts[POST_INDEX];
 			<p class="date"><?jai echo("%-%-%", post.pub_date_time.year, post.pub_date_time.month_starting_at_0 + 1, post.pub_date_time.day_of_month_starting_at_0 + 1); ?></p>
 		</header>
 		<?jai echo("%", post.html); ?>
+		<hr />
+		<?jai if post.bluesky_url.count > 0 { ?>
+			<p>Join the conversation by <?jai echo("<a href=\"%\">", post.bluesky_url); ?>replying on Bluesky</a>.</p>
+			<?jai echo("<bluesky-comments url=\"%\"> </bluesky-comments>", post.bluesky_url); ?>
+		<?jai } ?>
 	</article>
 </main>
-<?jai include("footer.jaitml"); ?>
+<?jai include("footer_post.jaitml"); ?>

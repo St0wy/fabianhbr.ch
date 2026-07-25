@@ -18,6 +18,7 @@ Post :: struct {
 	pub_date_time: Calendar_Time;
 	tags: [] string;
 	description: string;
+	bluesky_url: string;
 	html: string;
 }
 
@@ -126,6 +127,8 @@ parse_post_frontmatter :: (frontmatter: string) -> Post {
 				post.tags = split(value, ", ");
 			case "description";
 				post.description = value;
+			case "blueskyUrl";
+				post.bluesky_url = value;
 			case;
 				log_error("Unknown key in post frontmatter (key: %, value: %)", key, value);
 		}
