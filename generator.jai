@@ -181,9 +181,9 @@ parse_project_frontmatter :: (frontmatter: string) -> Project {
 	return project;
 }
 
-render_jaitml :: (path: string) -> string, bool {
+render_jaitml :: (path: string) -> string {
 	content, ok := read_entire_file(path);
-	if !ok return "", false;
+	if !ok return "";
 
 	code := false;
 	sb: String_Builder;
@@ -227,7 +227,7 @@ render_jaitml :: (path: string) -> string, bool {
 		else print_to_builder(*result, "%\n", str);
 	}
 
-	return builder_to_string(*result), true;
+	return builder_to_string(*result);
 }
 
 execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code {}) #expand {
@@ -235,7 +235,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	echo :: (format_string: string, args: ..Any) #expand {
 		print_to_builder(*jaitml_string_builder, format_string, ..args);
 	}
-	include :: ($include_path: string) #expand {
+	include :: (include_path: string) #expand {
 		sub_file_path_string :: #run -> string {
 			sub_file_path := parse_path(path);
 			sub_file_path.words[sub_file_path.words.count - 1] = include_path;

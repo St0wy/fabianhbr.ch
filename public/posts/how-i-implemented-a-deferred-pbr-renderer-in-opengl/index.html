@@ -291,7 +291,7 @@ This allows to only update the pixels impacted by the light and saves on perform
 (In my case I use Narkowicz ACES).</p><p><img src="/assets/images/opengl-scene/final.png" alt="final" /></p><p>Et voilà! It took a lot of effort, but we have our final image.</p><h2>Conclusion</h2><p>I&#39;m really proud of what I&#39;ve done.
 Computer graphics is the domain where I want to work and this project taught me a lot.
 I think I put in a lot of work, and the final result shows it.</p><p>That being said, there are still some things I could improve.
-Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add Frustum Culling</li><li>Add a bit of multi-threading somewhere</li><li>Do some benchmarks and analyze the code with tracy to optimize it a bit (this one is just for fun)</li></ul><p>You can find the code of this project on my <a href="https://github.com/St0wy/opengl-scene">GitHub</a>.</p><p>In the longer term, I really want to explore other graphics API using other programming languages.</p><p>Right now my goals are:</p><ul><li>Direct3D 11: Odin</li><li>Direct3D 12: Zig</li><li>Vulkan: Rust</li></ul><p>I hope I&#39;ll be able to work on these projects and maybe write a blogpost about it!</p><p></p><p><img src="/assets/images/opengl-scene/bobomb.jpg" alt="bob omb" /></p><p><img src="/assets/images/opengl-scene/cursed.png" alt="cursed" /></p><p><img src="/assets/images/opengl-scene/spike.png" alt="spike" /></p><p></p><p><img src="/assets/images/opengl-scene/ibl.png" alt="ibl" /></p>
+Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add Frustum Culling</li><li>Add a bit of multi-threading somewhere</li><li>Do some benchmarks and analyze the code with tracy to optimize it a bit (this one is just for fun)</li></ul><p>You can find the code of this project on my <a href="https://github.com/St0wy/opengl-scene">GitHub</a>.</p><p>In the longer term, I really want to explore other graphics API using other programming languages.</p><p>Right now my goals are:</p><ul><li>Direct3D 11: Odin</li><li>Direct3D 12: Zig</li><li>Vulkan: Rust</li></ul><p>I hope I&#39;ll be able to work on these projects and maybe write a blogpost about it!</p><p><em>now some bonus funny visual bugs</em></p><p><img src="/assets/images/opengl-scene/bobomb.jpg" alt="bob omb" /></p><p><img src="/assets/images/opengl-scene/cursed.png" alt="cursed" /></p><p><img src="/assets/images/opengl-scene/spike.png" alt="spike" /></p><p><em>and the full IBL developed integral because why not</em></p><p><img src="/assets/images/opengl-scene/ibl.png" alt="ibl" /></p>
 	</article>
 </main>
 <footer>© 2026 Fabian Huber</footer>
@@ -304,10 +304,12 @@ Such as:</p><ul><li>Structure of the code (especially renderer.cpp)</li><li>Add 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
-<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
 <script>
 	hljs.highlightAll();
+
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
 	const images = document.querySelectorAll('article img');

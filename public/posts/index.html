@@ -29,6 +29,12 @@
 	<ul class="posts">
 	
 		<li>
+			<a href="/posts/custom-site-generator-jai">Making my own custom site generator using Jai metaprogramming magic</a>
+			<p class="description">Why use Jekyll, Hugo, Astro, or Node when you can reinvent the wheel and write a custom templating engine and Markdown parser in Jai?</p>
+			<p class="date">2026-7-25</p>
+		</li>
+	
+		<li>
 			<a href="/posts/an-exploration-of-build-systems-for-cpp-projects">An exploration of build systems for C++ projects</a>
 			<p class="description">Exploring how to build a C++ project using Batch, Powershell, Nushell, Zig and CMake.</p>
 			<p class="date">2023-9-26</p>
@@ -65,10 +71,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
 <script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
-<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
 <script>
 	hljs.highlightAll();
+
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
 	const images = document.querySelectorAll('article img');

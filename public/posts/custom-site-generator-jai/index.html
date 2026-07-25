@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Making my own custom site generator using Jai metaprogramming magic - Fabian Huber</title>
+		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/projects">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/about">About</a></li>
+					<li><a href="/rss.xml">Subscribe</a></li>
+				</ul>
+			</nav>
+		</header>
+
+<main>
+	<article>
+		<header>
+			<h1>Making my own custom site generator using Jai metaprogramming magic</h1>
+			<p class="date">2026-7-25</p>
+		</header>
+		<p>I created my previous portfolio website using <a href="https://astro.build/">Astro</a>, but when it came time to add new stuff to it, 
+npm refused to run the build command because after downloading 623 dependencies, it found security risks in some of the packages.
+The next problem was that the project was using Astro 4. It started on Astro 3 and I upgraded it to v4 painfully.
+But now the most recent version is v7.1!</p><p>After all this frustration, being inspired by <a href="https://www.youtube.com/watch?v=YvnTsiIFXeI">gingerBill&#39;s video</a>,
+I decided to reinvent the wheel and make my own <a href="https://en.wikipedia.org/wiki/Static_site_generator">static site generator (SSG)</a>.
+Except that instead of having my code copy and paste the header/footer by hand, I thought it would be fun to try to make a templating system using
+<a href="https://github.com/Ivo-Balbaert/The_Way_to_Jai/blob/main/book/01A_What_is_Jai.md">Jai</a>&#39;s powerful metaprogramming features.
+The approach I chose was inspired by the work presented in <a href="https://www.youtube.com/watch?v=OpoxlJ9e3Qg">Tsoding&#39;s livestream</a> where he does exactly that.
+I then pushed the concept further and also added a handmade Markdown parser.</p><p>In this post, I will present how I made this Jai templating system, and then present my Markdown parser.</p><h2>The Jai templating system</h2><p>So what do I mean by that? Well, I wanted something where I could reuse some HTML and put some logic inside of it to, for example, display a list of blog posts.
+My goal was to make something that would specifically work for my needs, and not something hyper robust and generalized.
+I decided to call it <em>Jaitml</em> and it looks like this:</p><pre><code class="language-html">// index.jaitml
+&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;
+&lt;main&gt;
+	&lt;p&gt;Hi! My name is Fabian Huber. I am a Game &amp; Graphics Programmer.&lt;/p&gt;
+	&lt;ul&gt;
+		&lt;?jai for post: posts { ?&gt;
+		&lt;li&gt;&lt;?jai echo(&quot;%&quot;, post.title); ?&gt;&lt;/li&gt;
+		&lt;?jai } ?&gt;
+	&lt;/ul&gt;
+&lt;/main&gt;
+&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</code></pre><p>As you can see, it allows me to write some Jai code inside of HTML to copy the content of other files and basically write any logic I might want when I generate my website.
+This is done in a <code>generator.jai</code> file that handles this. Since it relies on the compiler to run this code, I decided to do everything at compile-time.
+Something that is easy to do in Jai, using the <code>#run</code> directive where I call <code>set_build_options_dc({do_output = false});</code> to tell the compiler to not create an executable.</p><p>I then have a <code>render_jaitml :: (path: string) -&gt; string</code> procedure that takes my <code>.jaitml</code> file and converts it to Jai code. A simple file like this:</p><pre><code class="language-html">&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;
+&lt;main&gt;
+	&lt;p&gt;Hi.&lt;/p&gt;
+&lt;/main&gt;
+&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</code></pre><p>Would be converted to :</p><pre><code class="language-jai">include(&quot;header.jaitml&quot;);
+echo(&quot;&lt;main&gt;\n&lt;p&gt;Hi.&lt;/p&gt;\n&lt;/main&gt;\n&quot;);
+include(&quot;footer.jaitml&quot;);</code></pre><p>Then to execute this code, I need to get the code string as a constant, meaning that it has to go through another <code>#run</code> directive (so this is at compile-compile-time).
+It can then be <code>#insert</code>-ed.</p><pre><code class="language-jai">code :: #run render_jaitml(path);
+#insert,scope() code;</code></pre><p>The templating system mostly works with two macros: <code>include</code> and <code>echo</code>. These are declared just above the call to <code>render_jaitml</code> like so:</p><pre><code class="language-jai">jaitml_string_builder: String_Builder;
+echo :: (format_string: string, args: ..Any) #expand {
+	print_to_builder(*jaitml_string_builder, format_string, ..args);
+}
+include :: (include_path: string) #expand {
+	sub_file_path_string :: #run -&gt; string {
+		sub_file_path := parse_path(path);
+		sub_file_path.words[sub_file_path.words.count - 1] = include_path;
+		return path_to_string(sub_file_path);
+	}
+
+	sub_code :: #run render_jaitml(sub_file_path_string);
+	#insert,scope() sub_code;
+}</code></pre><p>At the end, <code>jaitml_string_builder</code> contains the final HTML code and is written to an output file.
+Now, to read the posts, I simply declared a global constant <code>posts</code> variable that is filled up in a <code>#run</code> block (more on this later).</p><p>To generate one page per post, it was a bit more tricky.
+First, when generating the page, I needed to know which post to generate it for.
+This required me to add a <code>$extra_code: Code</code> block parameter to my macro where I could pass the post index like that:</p><pre><code class="language-jai">execute_jaitml(&quot;src/post.html.jaitml&quot;, tprint(&quot;%posts/slug/index.html&quot;, BUILD_DIR), #code { POST_INDEX :: index; });</code></pre><p>However, to make this work, I had to put the code that calls <code>render_jaitml</code> in a <code>#code</code> block too,
+merge them into one, and insert that because it is not possible to access the variables from one block in another.
+My final <code>execute_jaitml</code> procedure looks like this:</p><pre><code class="language-jai">execute_jaitml :: (
+	$path: string, 
+	output_path: string, 
+	$extra_code: Code = #code {}
+) #expand {
+	jaitml_string_builder: String_Builder;
+	echo :: (format_string: string, args: ..Any) #expand {
+		print_to_builder(*jaitml_string_builder, format_string, ..args);
+	}
+	include :: (include_path: string) #expand {
+		sub_file_path_string :: #run -&gt; string {
+			sub_file_path := parse_path(path);
+			sub_file_path.words[sub_file_path.words.count - 1] = include_path;
+			return path_to_string(sub_file_path);
+		}
+
+		sub_code :: #run render_jaitml(sub_file_path_string);
+		#insert,scope() sub_code;
+	}
+
+	#insert,scope() -&gt; Code {
+		statements_to_insert: [..] *Code_Node;
+		extra_code_nodes := compiler_get_nodes(extra_code);
+		if extra_code_nodes.kind == .BLOCK {
+			block := extra_code_nodes.(*Code_Block);
+			array_add(*statements_to_insert, ..block.statements);
+		}
+
+		file_code_nodes := compiler_get_nodes(#code {
+			code :: #run render_jaitml(path);
+			#insert,scope() code;
+			write_entire_file(output_path, *jaitml_string_builder);
+		});
+
+		array_add(*statements_to_insert, file_code_nodes);
+		block_to_insert := New(Code_Block);
+		block_to_insert.block_type = .IMPERATIVE;
+		block_to_insert.statements = statements_to_insert;
+		return compiler_get_code(block_to_insert);
+	}
+}</code></pre><p>One other problem is that any file included through <code>include</code> is also not able to read this information.
+This was a problem when setting the title of the page since it had to be set in the header.
+To fix that, I declared a global <code>title := &quot;&quot;;</code> variable that I change before calling <code>execute_jaitml</code>.
+This means I could also do that for the post indices, and get rid of the complication with the <code>$extra_code</code>,
+but I am not sure of an ideal solution for now, as I&#39;d like to limit global data as much as possible.</p><p>Then, another problem appeared when it was time to iterate over the <code>posts</code> array and generate the pages.
+This is because <code>execute_jaitml</code> needs to be executed with the <code>#run</code>, so all the parameters must be constants.
+The problem is that when you iterate over a constant array, the iterator is not itself constant.</p><p>To go around that, I used some more metaprogramming magic and generated the code that would result from an unrolled loop:</p><pre><code class="language-jai">#insert -&gt; string {
+	sb: String_Builder;
+	for posts {
+		print_to_builder(*sb, &quot;title = \&quot;% - Fabian Huber\&quot;;&quot;, it.title);
+		print_to_builder(*sb, &quot;execute_jaitml(\&quot;src/post.html.jaitml\&quot;, tprint(\&quot;\%posts/%/index.html\&quot;, BUILD_DIR), #code { POST_INDEX :: %; });&quot;, it.slug, it_index);
+	}
+	return builder_to_string(*sb);
+};</code></pre><p>And with that, the template system is complete!</p><h2>Markdown parsing</h2><p>Now to parse Markdown, I needed a way to first get an abstract syntax tree (AST) that would then be used to generate an HTML output.
+Each node stores pointers to other nodes to be able to make the tree and some data that is stored in a <a href="https://en.wikipedia.org/wiki/Tagged_union">discriminated union</a>.
+There are two kinds of node types, block types (headings, paragraphs, etc.) and inline types (text, strong, etc.).</p><pre><code class="language-jai">Node_Kind :: enum u8 {
+	Document;
+	// Blocks
+	Heading;
+	Paragraph;
+	// Inline
+	Text;
+	Strong;
+	// ...
+}
+
+Node_Data :: union kind: Node_Kind {
+	level: u8;
+	content: string;
+}
+
+Ast_Node :: struct {
+	parent: *Ast_Node;
+	first_child: *Ast_Node;
+	last_child: *Ast_Node;
+	next_sibling: *Ast_Node;
+	using data: Node_Data;
+}</code></pre><p>There isn&#39;t a lot in <code>Node_Data</code> because more is not needed. Just <code>level</code> is used for headings, then content for everything else.
+For example, images have an Image node that stores the url in content, then a child Text node that stores the alt.
+For the document kind, content stores the frontmatter, and it&#39;s the responsibility of the code using the library to parse this.</p><p>Since this program only runs shortly and terminates, I never manually free any memory and let the OS take care of that.
+However, I still want allocations to be fast.
+Since I will be allocating a lot of small nodes, I decided to use the <a href="https://www.dgtlgrove.com/p/untangling-lifetimes-the-arena-allocator">arena allocator</a> provided by Jai called <code>Flat_Pool</code>.
+It works by using the virtual address space of the machine.
+It reserves a big chunk of memory (256MB by default) in the address space that gets committed each time the currently committed memory runs out.
+The node allocation code looks like this:</p><pre><code class="language-jai">#import &quot;Flat_Pool&quot;;
+pool: Flat_Pool;
+a: Allocator;
+// a is set in another procedure
+// a.proc = flat_pool_allocator_proc;
+// a.data = *pool;
+
+make_node :: (kind: Node_Kind, parent: *Ast_Node = null) -&gt; *Ast_Node {
+	node := New(Ast_Node,, a);
+	node.kind = kind;
+	if parent then add_child(parent, node);
+	return node;
+}</code></pre><p>The parsing is done in two phases:</p><ol><li><strong>Block parsing</strong>: Iterates over the Markdown document to extract the block nodes.</li><li><strong>Inline parsing</strong>: Iterates over text nodes and breaks them up to add things like images, bold text, etc.</li></ol><p>Parsing is done using an ad-hoc line parser, so the code is not the prettiest,
+but most importantly it is not <a href="https://commonmark.org/">CommonMark</a> compliant.
+My goal was to only implement the strict minimum to make my current Markdown documents work.
+The only thing I had to change was the frontmatter and tables, which I transformed into HTML ones.
+If I ever need more in the future, I can still add it later.</p><p>To emit HTML, I iterate over the tree in a depth-first manner using a stackless tree traversal and print the tags in a <code>String_Builder</code>.</p><pre><code class="language-jai">emit_html :: (root: *Ast_Node) -&gt; string {
+	if !root return &quot;&quot;;
+	sb: String_Builder;
+
+	current := root;
+	going_down := true;
+
+	while current {
+		if going_down {
+			print_open_tag(*sb, current);
+			if current.first_child {
+				current = current.first_child;
+				continue;
+			}
+		}
+
+		print_close_tag(*sb, current);
+		if current.next_sibling {
+			current = current.next_sibling;
+			going_down = true;
+		} else {
+			current = current.parent;
+			going_down = false;
+		}
+	}
+
+	return builder_to_string(*sb);
+}</code></pre><p>I also simplified the frontmatter of my documents to make it easier to parse than YAML.
+Each line has one key-value pair that is separated by <code>: </code>.</p><p>Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.</p><pre><code class="language-jai">posts :: #run -&gt; [] Post {
+	posts_arr: [..] Post;
+	visit_files(&quot;src/posts&quot;, false, *posts_arr, (info: *File_Visit_Info, posts_arr: *[..] Post) {
+		if info.is_directory then return;
+		ext, ok := path_extension(info.short_name);
+		if !ok then return;
+		if ext != &quot;md&quot; then return;
+
+		log(&quot;Parsing %&quot;, info.short_name);
+		markdown_file_contents := read_entire_file(info.full_name);
+		node := Markdown.parse(markdown_file_contents);
+		html := Markdown.emit_html(node);
+		post := parse_post_frontmatter(node.content);
+		post.html = html;
+		make_directory_if_it_does_not_exist(tprint(&quot;%posts/%&quot;, BUILD_DIR, post.slug));
+		array_add(posts_arr, post);
+	});
+	sorted := quick_sort(posts_arr, (post_a: Post, post_b: Post) -&gt; int {
+		time_a := calendar_to_apollo(post_a.pub_date_time);
+		time_b := calendar_to_apollo(post_b.pub_date_time);
+		return compare_apollo_times(time_b, time_a);
+	});
+	return sorted;
+}</code></pre><h2>Conclusion</h2><p>If you are reading this, it means that it worked!
+Now since everything runs at compile time, meaning that it is &quot;interpreted&quot;, you might wonder how performant it is.
+Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~685ms.
+Most of the time is spent parsing the Markdown, which I&#39;m sure would be wayyy faster if compiled and optimized,
+but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
+I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
+	</article>
+</main>
+<footer>© 2026 Fabian Huber</footer>
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
+<script src="https://unpkg.com/highlightjs-zig/dist/zig.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
+<script type="text/javascript" charset="UTF-8" src="/scripts/jai.min.js"></script>
+<script>
+	hljs.highlightAll();
+
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('article img');
+
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src;
+			lightbox.style.display = 'block';
+		});
+	});
+
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = "";
+	});
+
+	(function addHeadingLinks(){
+		let article = document.querySelectorAll('article')[0];
+		if (!article) return;
+		let headings = article.querySelectorAll('h1, h2, h3');
+		let seenIds = new Set();
+		headings.forEach(function(heading){
+			if (!heading.id) {
+				let baseId = heading.textContent
+					.trim()
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/(^-|-$)/g, '');
+				if (!baseId) baseId = 'section';
+				let uniqueId = baseId;
+				let counter = 1;
+				while (seenIds.has(uniqueId) || document.getElementById(uniqueId)) {
+					uniqueId = baseId + '-' + counter;
+					counter++;
+				}
+
+				heading.id = uniqueId;
+			}
+
+			seenIds.add(heading.id);
+
+			let a = document.createElement('a');
+			a.innerHTML = heading.innerHTML;
+			a.href = '#'+heading.id;
+			heading.innerHTML = '';
+			heading.appendChild(a);
+		});
+	})();
+</script>
+</body>
+</html>

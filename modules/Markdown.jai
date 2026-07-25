@@ -1,5 +1,5 @@
 
-NodeKind :: enum u8 {
+Node_Kind :: enum u8 {
 	Document;
 
 	// Blocks
@@ -23,92 +23,120 @@ NodeKind :: enum u8 {
 	HtmlInline;
 }
 
-NodeData :: union kind: NodeKind {
-	frontmatter: string;
+Node_Data :: union kind: Node_Kind {
 	level: u8;
 	content: string;
 }
 
-AstNode :: struct {
-	parent: *AstNode;
-	first_child: *AstNode;
-	last_child: *AstNode;
-	next_sibling: *AstNode;
-	using data: NodeData;
+Ast_Node :: struct {
+	parent: *Ast_Node;
+	first_child: *Ast_Node;
+	last_child: *Ast_Node;
+	next_sibling: *Ast_Node;
+	using data: Node_Data;
 }
 
 // document is the markdown file content
-parse :: (document: string) -> root: *AstNode {
+parse :: (document: string) -> root: *Ast_Node {
 	root := parse_blocks(document);
 	parse_inline(root);
 	return root;
 }
 
-emit_html :: (node: *AstNode) -> string {
-	if !node then return "";
+emit_html :: (root: *Ast_Node) -> string {
+	print_open_tag :: (sb: *String_Builder, node: *Ast_Node) {
+		if node.kind == {
+			case .Document; // Do nothing
+			case .Heading;
+				print_to_builder(sb, "<h%>", node.level);
+			case .Paragraph;
+				append(sb, "<p>");
+			case .Blockquote;
+				append(sb, "<blockquote>");
+			case .BulletList;
+				append(sb, "<ul>");
+			case .NumberList;
+				append(sb, "<ol>");
+			case .ListItem;
+				append(sb, "<li>");
+			case .CodeBlock;
+				lang := ifx node.content.count > 0 then node.content else "plaintext";
+				print_to_builder(sb, "<pre><code class=\"language-%\">", lang);
+			case .ThematicBreak;
+				append(sb, "<hr/>");
+			case .HtmlInline; #through;
+			case .HtmlBlock;
+				append(sb, node.content);
+			case .Text;
+				append(sb, escape_for_html(node.content));
+			case .Strong;
+				append(sb, "<strong>");
+			case .Emphasis;
+				append(sb, "<em>");
+			case .CodeInline;
+				append(sb, "<code>");
+			case .Link;
+				print_to_builder(sb, "<a href=\"%\">", node.content);
+			case .Image;
+				print_to_builder(sb, "<img src=\"%\" alt=\"", node.content);
+			case;
+				log_error("Unhandled case in the html emitter open phase: %", node.*);
+		}
+	}
+
+	print_close_tag :: (sb: *String_Builder, node: *Ast_Node) {
+		if node.kind == {
+			case .Heading;
+				print_to_builder(sb, "</h%>", node.level);
+			case .Paragraph;
+				append(sb, "</p>");
+			case .Blockquote;
+				append(sb, "</blockquote>");
+			case .BulletList;
+				append(sb, "</ul>");
+			case .NumberList;
+				append(sb, "</ol>");
+			case .ListItem;
+				append(sb, "</li>");
+			case .CodeBlock;
+				append(sb, "</code></pre>");
+			case .Strong;
+				append(sb, "</strong>");
+			case .Emphasis;
+				append(sb, "</em>");
+			case .CodeInline;
+				append(sb, "</code>");
+			case .Link;
+				append(sb, "</a>");
+			case .Image;
+				append(sb, "\" />");
+		}
+	}
+
+	if !root return "";
 	sb: String_Builder;
-	closing_tag: string;
 
-	if node.kind == {
-		case .Document; // Do nothing
-		case .Heading;
-			print_to_builder(*sb, "<h%>", node.level);
-			closing_tag = tprint("</h%>", node.level);
-		case .Paragraph;
-			append(*sb, "<p>");
-			closing_tag = "</p>";
-		case .Blockquote;
-			append(*sb, "<blockquote>");
-			closing_tag = "</blockquote>";
-		case .BulletList;
-			append(*sb, "<ul>");
-			closing_tag = "</ul>";
-		case .NumberList;
-			append(*sb, "<ol>");
-			closing_tag = "</ol>";
-		case .ListItem;
-			append(*sb, "<li>");
-			closing_tag = "</li>";
-		case .CodeBlock;
-			lang := ifx node.content.count > 0 then node.content else "plaintext";
-			print_to_builder(*sb, "<pre><code class=\"language-%\">", lang);
-			closing_tag = "</code></pre>";
-		case .ThematicBreak;
-			append(*sb, "<hr/>");
-			closing_tag = "";
-		case .HtmlInline; #through;
-		case .HtmlBlock;
-			append(*sb, node.content);
-			closing_tag = "";
-		case .Text;
-			append(*sb, escape_for_html(node.content));
-			// if node.next_sibling && node.next_sibling.kind == .Text then append(*sb, " ");
-		case .Strong;
-			append(*sb, "<strong>");
-			closing_tag = "</strong>";
-		case .Emphasis;
-			append(*sb, "<em>");
-			closing_tag = "</em>";
-		case .CodeInline;
-			append(*sb, "<code>");
-			closing_tag = "</code>";
-		case .Link;
-			print_to_builder(*sb, "<a href=\"%\">", node.content);
-			closing_tag = "</a>";
-		case .Image;
-			print_to_builder(*sb, "<img src=\"%\" alt=\"", node.content);
-			closing_tag = "\" />";
-		case;
-			log_error("Unhandled case in the html emitter : %", node.*);
+	current := root;
+	going_down := true;
+
+	while current {
+		if going_down {
+			print_open_tag(*sb, current);
+			if current.first_child {
+				current = current.first_child;
+				continue;
+			}
+		}
+
+		print_close_tag(*sb, current);
+		if current.next_sibling {
+			current = current.next_sibling;
+			going_down = true;
+		} else {
+			current = current.parent;
+			going_down = false;
+		}
 	}
-
-	child := node.first_child;
-	while child {
-		append(*sb, emit_html(child));
-		child = child.next_sibling;
-	}
-
-	append(*sb, closing_tag);
 
 	return builder_to_string(*sb);
 }
@@ -120,8 +148,8 @@ emit_html :: (node: *AstNode) -> string {
 #import "String";
 
 List_Level :: struct {
-	list_node: *AstNode;
-	last_item: *AstNode;
+	list_node: *Ast_Node;
+	last_item: *Ast_Node;
 	indent: int;
 }
 
@@ -148,15 +176,15 @@ skip_line :: inline (str: *string) {
 	}
 }
 
-add_child :: inline (parent: *AstNode, child: *AstNode) {
+add_child :: inline (parent: *Ast_Node, child: *Ast_Node) {
 	child.parent = parent;
 	if parent.last_child then parent.last_child.next_sibling = child;
 	else parent.first_child = child;
 	parent.last_child = child;
 }
 
-make_node :: inline (kind: NodeKind, parent: *AstNode = null) -> *AstNode {
-	node := New(AstNode,, a);
+make_node :: inline (kind: Node_Kind, parent: *Ast_Node = null) -> *Ast_Node {
+	node := New(Ast_Node,, a);
 	node.kind = kind;
 	if parent then add_child(parent, node);
 	return node;
@@ -198,8 +226,7 @@ get_indent :: inline (s: string) -> indent: int, rest: string {
 	return indent, str;
 }
 
-
-parse_blocks :: (document: string) -> *AstNode {
+parse_blocks :: (document: string) -> *Ast_Node {
 	if document.count == 0 then return null;
 
 	a.proc = flat_pool_allocator_proc;
@@ -217,7 +244,7 @@ parse_blocks :: (document: string) -> *AstNode {
 		while !starts_with(doc, "---") skip_line(*doc);
 		end_frontmatter := doc;
 		frontmatter.count -= end_frontmatter.count;
-		root.frontmatter = trim(frontmatter);
+		root.content = trim(frontmatter);
 		skip_line(*doc);
 	}
 
@@ -414,7 +441,7 @@ parse_blocks :: (document: string) -> *AstNode {
 	return root;
 }
 
-parse_inline :: (node: *AstNode) {
+parse_inline :: (node: *Ast_Node) {
 	parent_is_code := ifx node.parent && node.parent.kind == .CodeBlock then true else false;
 	if node.kind == .Text && !parent_is_code {
 		doc := node.content;
@@ -425,19 +452,19 @@ parse_inline :: (node: *AstNode) {
 			is_code := doc[0] == "`";
 			if !is_alnum(previous_char) && (is_strong || is_em || is_code) {
 				start_doc := doc;
-				kind := ifx is_strong then NodeKind.Strong else ifx is_em then NodeKind.Emphasis else ifx is_code then NodeKind.CodeInline;
+				kind := ifx is_strong then Node_Kind.Strong else ifx is_em then Node_Kind.Emphasis else ifx is_code then Node_Kind.CodeInline;
 				node.content.count -= doc.count;
 				advance(*doc, ifx is_strong then 2 else 1);
 				content := doc;
-				found_closing_symbol :=  false;
+				found_closing_symbol := false;
 				while doc.count > 0 {
 					close_strong := is_strong && starts_with(doc, "**");
 					close_em := is_em && doc[0] == "_";
 					close_code := is_code && doc[0] == "`";
-					if close_strong || close_code || close_code {
-						offset := ifx close_strong 2 else 1;
+					if close_strong || close_em || close_code {
 						found_closing_symbol = true;
-						if doc.count > offset + 1 && is_alnum(doc[offset]) {
+						offset := ifx close_strong 2 else 1;
+						if doc.count > offset && is_alnum(doc[offset]) {
 							found_closing_symbol = false;
 						}
 						if found_closing_symbol then break;
@@ -496,7 +523,7 @@ parse_inline :: (node: *AstNode) {
 						advance(*doc);
 
 						node.content.count -= start_doc.count;
-						kind := ifx is_image then NodeKind.Image else NodeKind.Link;
+						kind := ifx is_image then Node_Kind.Image else Node_Kind.Link;
 						link_node := make_node(kind, parent=node.parent);
 						link_node.content = link_url;
 

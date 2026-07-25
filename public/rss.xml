@@ -7,6 +7,22 @@
 
         
             <item>
+                <title>Making my own custom site generator using Jai metaprogramming magic</title>
+
+                <link>https://fabianhbr.ch/posts/custom-site-generator-jai</link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/custom-site-generator-jai</guid>
+                <description><![CDATA[Why use Jekyll, Hugo, Astro, or Node when you can reinvent the wheel and write a custom templating engine and Markdown parser in Jai?]]></description>
+                <pubDate>2026-07-25T00:00:00.000Z</pubDate>
+                
+                    <category>web</category>
+                
+                    <category>static-site-generator</category>
+                
+                    <category>jai</category>
+                
+            </item>
+        
+            <item>
                 <title>An exploration of build systems for C++ projects</title>
 
                 <link>https://fabianhbr.ch/posts/an-exploration-of-build-systems-for-cpp-projects</link>
