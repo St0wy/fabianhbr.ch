@@ -503,15 +503,7 @@ Such as:
 
 You can find the code of this project on my [GitHub](https://github.com/St0wy/opengl-scene).
 
-In the longer term, I really want to explore other graphics API using other programming languages.
-
-Right now my goals are:
-
-- Direct3D 11: Odin
-- Direct3D 12: Zig
-- Vulkan: Rust
-
-I hope I'll be able to work on these projects and maybe write a blogpost about it!
+---
 
 _now some bonus funny visual bugs_
 
