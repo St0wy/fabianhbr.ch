@@ -18,16 +18,14 @@ It features :
 - Per-voxel and per-pixel lighting
 - Diffuse, reflective and emissive materials
 - A palette compressed world
-- An environement map as a light source
+- An environment map as a light source
 
 ## What I Learned
 
 - **The Vulkan API**: As the project requires the use of compute shaders, and because I wanted to learn the API, Vulkan was chosen.
-- **Jai**: At first the project started with Rust, but then I got access to the beta of Jai, so I decided to use it.
-	It is aimed to be a replacement of C++ geared towards games and the "joy of programming".
+- **Jai**: At first the project started with Rust, but then I got access to the beta of Jai, so I decided to use it. It is aimed to be a replacement of C++ geared towards games and the "joy of programming".
 - **Various path tracing techniques**: This project deepened my understanding of the subject, with things such as cosine-weighted sampling and russian roulette.
-- **Statistics**: Doing real-time path tracing requires to apply some statistics concepts,
-	and I also used student's T-test to prove than an optimisation made something faster.
+- **Statistics**: Doing real-time path tracing requires to apply some statistics concepts, and I also used student's T-test to prove than an optimisation made something faster.
 
 You can see the source of the [renderer on GitLab](https://gitlab.com/Stowy/voxel-ray-tracer)
 and see the source of the [thesis also on GitLab](https://gitlab.com/Stowy/bachelor-thesis).

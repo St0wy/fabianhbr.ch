@@ -50,7 +50,7 @@
 		<p>This is a <strong>2D physics engine</strong> made in <strong>C++</strong> with no libraries.
 It was made during the physics engine module of the SAE Institute.</p><p>It has :</p><ul><li>Circle colliders</li><li><a href="https://en.wikipedia.org/wiki/Minimum_bounding_box#Axis-aligned_minimum_bounding_box">AABB</a> colliders</li><li>Broad phase collision detection with a grid</li></ul><p>At first the demo scene was made in <a href="https://www.sfml-dev.org/">SFML</a>.
 But recently, I ported it to <a href="https://www.raylib.com/">raylib</a> so that I
-could compile the projet to a web version with <a href="https://emscripten.org/">Emscripten</a>.
+could compile the project to a web version with <a href="https://emscripten.org/">Emscripten</a>.
 You can left click to place circles and right click to place squares.</p><p>You can read the project&#39;s documentation on <a href="https://stowy-physics-engine.readthedocs.io/en/latest/index.html">Read the Docs</a> and see the source on <a href="https://github.com/St0wy/StowyPhysicsEngine">GitHub</a>.</p><div class="spinner" id="spinner"></div><div class="emscripten" id="status">Downloading...</div><progress hidden id="progress" max="100" value="0"></progress><canvas
     class="emscripten"
     id="canvas"
@@ -123,8 +123,8 @@ var statusElement = document.getElementById("status"),
         },
     };
 Module.setStatus("Downloading..."), (window.onerror = (e) => { });
-</script><script async src="/physics_engine_web_demo.js"></script><h2>What I Learned</h2><ul><li><strong>The math behind a physics engine</strong>: Even though I already studied Newton&#39;s equations, applying them in code is a different challenge.</li><li><strong>Creating a CMake library</strong>: Before this project, using CMake was quite complicated for me and in this project I read a lot of tutorials to be more confortable.</li><li><strong>What to think about when designing an API</strong>: Since my physics engine is a library, I had to think about what the user code would look like.</li><li><strong>Optimization with data structures</strong>: To optimize collision detection, we studied multiple data structures (KD-Tree, Quadtree, Grids). I choose to implement a grid.</li></ul><h2>Code Reviews</h2><p>The project was also featured in 3 code review videos made by <a href="https://www.youtube.com/@TheCherno">The Cherno</a>,
-who was an engine developper at Electronic Arts for 4 years.
+</script><script async src="/physics_engine_web_demo.js"></script><h2>What I Learned</h2><ul><li><strong>The math behind a physics engine</strong>: Even though I already studied Newton&#39;s equations, applying them in code is a different challenge.</li><li><strong>Creating a CMake library</strong>: Before this project, using CMake was quite complicated for me and in this project I read a lot of tutorials to be more comfortable.</li><li><strong>What to think about when designing an API</strong>: Since my physics engine is a library, I had to think about what the user code would look like.</li><li><strong>Optimization with data structures</strong>: To optimize collision detection, we studied multiple data structures (KD-Tree, Quadtree, Grids). I choose to implement a grid.</li></ul><h2>Code Reviews</h2><p>The project was also featured in 3 code review videos made by <a href="https://www.youtube.com/@TheCherno">The Cherno</a>,
+who was an engine programmer at Electronic Arts for 4 years.
 They accumulated over 318&#39;000 views as I&#39;m writing this.
 In these, The Cherno looks at my code and makes comments on the various things that could be improved.</p><iframe
 	class="video"

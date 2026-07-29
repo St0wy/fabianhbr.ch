@@ -20,7 +20,7 @@ It has :
 
 At first the demo scene was made in [SFML](https://www.sfml-dev.org/).
 But recently, I ported it to [raylib](https://www.raylib.com/) so that I
-could compile the projet to a web version with [Emscripten](https://emscripten.org/).
+could compile the project to a web version with [Emscripten](https://emscripten.org/).
 You can left click to place circles and right click to place squares.
 
 You can read the project's documentation on [Read the Docs](https://stowy-physics-engine.readthedocs.io/en/latest/index.html) and see the source on [GitHub](https://github.com/St0wy/StowyPhysicsEngine).
@@ -109,14 +109,14 @@ Module.setStatus("Downloading..."), (window.onerror = (e) => { });
 ## What I Learned
 
 -   **The math behind a physics engine**: Even though I already studied Newton's equations, applying them in code is a different challenge.
--   **Creating a CMake library**: Before this project, using CMake was quite complicated for me and in this project I read a lot of tutorials to be more confortable.
+-   **Creating a CMake library**: Before this project, using CMake was quite complicated for me and in this project I read a lot of tutorials to be more comfortable.
 -   **What to think about when designing an API**: Since my physics engine is a library, I had to think about what the user code would look like.
 -   **Optimization with data structures**: To optimize collision detection, we studied multiple data structures (KD-Tree, Quadtree, Grids). I choose to implement a grid.
 
 ## Code Reviews
 
 The project was also featured in 3 code review videos made by [The Cherno](https://www.youtube.com/@TheCherno),
-who was an engine developper at Electronic Arts for 4 years.
+who was an engine programmer at Electronic Arts for 4 years.
 They accumulated over 318'000 views as I'm writing this.
 In these, The Cherno looks at my code and makes comments on the various things that could be improved.
 

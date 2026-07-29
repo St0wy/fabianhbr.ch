@@ -28,7 +28,7 @@ Mostly on subjects such as :
 -   **SIMD**: I learned how SIMD can greatly impact performance and how to use it with intrinsics.
     I did a small [solar system simulation project](https://github.com/St0wy/FunWithVectors) that I then optimized with SIMD to see its impact.
 -   **Reading Assembly**: I learned to read the most common x86 assembly instructions. I also implemented some simple functions in assembly, the most complex one being bubble sort.
--   **Multithreading**: I learned about the multithreading primitives present in C++. I also used [Rayon](https://github.com/rayon-rs/rayon) to parallelize my Ray Tracing project.
+-   **Multithreading**: I learned about the multithreading primitives present in C++ during the classes. I also used [Rayon](https://github.com/rayon-rs/rayon) to parallelize my Ray Tracing project.
 
 I also learned the **math** and logic behind **Ray Tracing**.
 
