@@ -7,6 +7,7 @@ heroImage: /assets/images/raytracing/bigScene.png
 teamSize: 1
 timeFrame: 1.5 Month
 toolsUsed: Rust
+repo: https://github.com/St0wy/raytracing
 ---
 
 This project was made during the **optimization** module at SAE Institute.

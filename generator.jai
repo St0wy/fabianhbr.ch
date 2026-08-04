@@ -32,6 +32,8 @@ Project :: struct {
 	time_frame: string;
 	tools_used: string;
 	html: string;
+	repo: string;
+	itch: string;
 }
 
 posts :: #run -> [] Post {
@@ -174,6 +176,10 @@ parse_project_frontmatter :: (frontmatter: string) -> Project {
 				project.tools_used = value;
 			case "timeFrame";
 				project.time_frame = value;
+			case "itch";
+			    project.itch = value;
+			case "repo";
+			    project.repo = value;
 			case;
 				log_error("Unknown key in project frontmatter (key: %, value: %)", key, value);
 		}

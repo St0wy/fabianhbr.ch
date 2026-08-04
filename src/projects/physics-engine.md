@@ -7,6 +7,7 @@ heroImage: /assets/images/physics-engine/physics-engine.png
 teamSize: 1
 timeFrame: 1 Month
 toolsUsed: C++
+repo: https://github.com/St0wy/StowyPhysicsEngine
 ---
 
 This is a **2D physics engine** made in **C++** with no libraries.

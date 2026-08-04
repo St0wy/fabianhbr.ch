@@ -7,6 +7,7 @@ heroImage: /assets/images/software-raster/output.png
 teamSize: 1
 timeFrame: 1 month
 toolsUsed: Jai
+repo: https://gitlab.com/Stowy/tinyrenderer
 ---
 
 A CPU-based rasterizer built in Jai, following the [tinyrenderer](https://github.com/ssloy/tinyrenderer) guide by Dmitry V. Sokolov.

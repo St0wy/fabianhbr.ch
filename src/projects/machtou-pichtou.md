@@ -7,6 +7,7 @@ heroImage: /assets/images/machtou-pichtou/machtou.jpg
 teamSize: 3
 timeFrame: 48 hours
 toolsUsed: Custom C Engine
+itch: https://stowy.itch.io/machtou-pichtou-defenders-slip-and-slide
 ---
 
 <iframe

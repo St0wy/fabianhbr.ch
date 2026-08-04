@@ -7,6 +7,7 @@ heroImage: /assets/images/opengl-scene/chat.jpg
 teamSize: 1
 timeFrame: 3 Months
 toolsUsed: C++ / OpenGL
+repo: https://github.com/St0wy/opengl-scene
 ---
 
 <iframe

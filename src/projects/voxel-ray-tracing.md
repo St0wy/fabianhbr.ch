@@ -7,6 +7,7 @@ heroImage: /assets/images/bsc/final.jpg
 teamSize: 1
 timeFrame: 7 Months
 toolsUsed: Jai / Vulkan
+repo: https://gitlab.com/Stowy/voxel-ray-tracer
 ---
 
 Final project of my studies at SAE Institute Geneva.

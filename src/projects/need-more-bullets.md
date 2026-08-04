@@ -7,6 +7,8 @@ heroImage: /assets/images/need-more-bullets/need_more_bullets.png
 teamSize: 3
 timeFrame: 48 hours
 toolsUsed: Unity
+itch: https://stowy.itch.io/need-more-bullets
+repo: https://gitlab.com/Stowy/lvlupgamejam2024
 ---
 
 <iframe
