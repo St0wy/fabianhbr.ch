@@ -7,7 +7,7 @@ heroImage: /assets/images/software-raster/output.png
 teamSize: 1
 timeFrame: 1 month
 toolsUsed: Jai
-repo: https://gitlab.com/Stowy/tinyrenderer
+repo: https://codeberg.org/St0wy/tinyrenderer
 ---
 
 A CPU-based rasterizer built in Jai, following the [tinyrenderer](https://github.com/ssloy/tinyrenderer) guide by Dmitry V. Sokolov.
@@ -20,7 +20,7 @@ The goal of this project is to understand the graphics pipeline, from raw vertic
 - **Mapping:** Tangent-space Normal maps, bilinear texture filtering and handmade `.obj` file loading.
 - **Output:** Writes to PNG via [stb_image_write](https://github.com/nothings/stb).
 
-You can see the source of the project on [GitLab](https://gitlab.com/Stowy/tinyrenderer).
+You can see the source of the project on [Codeberg](https://codeberg.org/St0wy/tinyrenderer).
 
 <div class="screenshots">
 	<img src="/assets/images/software-raster/dragon.png" />
