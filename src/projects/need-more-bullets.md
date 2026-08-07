@@ -8,7 +8,7 @@ teamSize: 3
 timeFrame: 48 hours
 toolsUsed: Unity
 itch: https://stowy.itch.io/need-more-bullets
-repo: https://gitlab.com/Stowy/lvlupgamejam2024
+repo: https://codeberg.org/St0wy/LvlUpGameJam2024
 ---
 
 <iframe
@@ -30,7 +30,7 @@ The theme of the jam was _Reduce, Reuse, Recycle_.
 -   **FPS Weapon Rendering**: To not have the weapon go through walls, I used a separate camera to render it so that it would always be on top.
 -   **The importance of Juice**: The project is not the most balanced or the smartest in its use of the theme, but we tried to add as much Juice as we could and I think it plays a big part in why we won the public's choice award.
 
-You can play the game on [Itch.io](https://stowy.itch.io/need-more-bullets) and see its source code on [GitLab](https://gitlab.com/Stowy/lvlupgamejam2024).
+You can play the game on [Itch.io](https://stowy.itch.io/need-more-bullets) and see its source code on [Codeberg](https://codeberg.org/St0wy/LvlUpGameJam2024).
 
 ---
 
