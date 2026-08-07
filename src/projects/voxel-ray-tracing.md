@@ -7,7 +7,7 @@ heroImage: /assets/images/bsc/final.jpg
 teamSize: 1
 timeFrame: 7 Months
 toolsUsed: Jai / Vulkan
-repo: https://gitlab.com/Stowy/voxel-ray-tracer
+repo: https://codeberg.org/St0wy/voxel-ray-tracer
 ---
 
 Final project of my studies at SAE Institute Geneva.
@@ -28,8 +28,8 @@ It features :
 - **Various path tracing techniques**: This project deepened my understanding of the subject, with things such as cosine-weighted sampling and russian roulette.
 - **Statistics**: Doing real-time path tracing requires to apply some statistics concepts, and I also used student's T-test to prove than an optimisation made something faster.
 
-You can see the source of the [renderer on GitLab](https://gitlab.com/Stowy/voxel-ray-tracer)
-and see the source of the [thesis is on Codeberg](https://codeberg.org/St0wy/bachelor-thesis).
+You can see the source of the [renderer on Codeberg](https://codeberg.org/St0wy/voxel-ray-tracer)
+and see the source of the [thesis is also on Codeberg](https://codeberg.org/St0wy/bachelor-thesis).
 
 ---
 
