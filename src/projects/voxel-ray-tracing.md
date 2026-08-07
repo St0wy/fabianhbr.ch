@@ -29,17 +29,17 @@ It features :
 - **Statistics**: Doing real-time path tracing requires to apply some statistics concepts, and I also used student's T-test to prove than an optimisation made something faster.
 
 You can see the source of the [renderer on GitLab](https://gitlab.com/Stowy/voxel-ray-tracer)
-and see the source of the [thesis also on GitLab](https://gitlab.com/Stowy/bachelor-thesis).
+and see the source of the [thesis is on Codeberg](https://codeberg.org/St0wy/bachelor-thesis).
 
 ---
 
 ## The Thesis
 
-<object data="https://stowy.gitlab.io/bachelor-thesis/main.pdf" type="application/pdf" width="100%" style="aspect-ratio: 9/10; margin-bottom: 14px;">
-	<p>Unable to display PDF file. <a href="https://stowy.gitlab.io/bachelor-thesis/main.pdf">Download</a> instead.</p>
+<object data="https://st0wy.codeberg.page/bachelor-thesis/main.pdf" type="application/pdf" width="100%" style="aspect-ratio: 9/10; margin-bottom: 14px;">
+	<p>Unable to display PDF file. <a href="https://st0wy.codeberg.page/bachelor-thesis/main.pdf">Download</a> instead.</p>
 </object>
 
-You can find the pdf at [https://stowy.gitlab.io/bachelor-thesis/main.pdf](https://stowy.gitlab.io/bachelor-thesis/main.pdf).
+You can find the pdf at [https://st0wy.codeberg.page/bachelor-thesis/main.pdf](https://st0wy.codeberg.page/bachelor-thesis/main.pdf).
 
 ---
 
