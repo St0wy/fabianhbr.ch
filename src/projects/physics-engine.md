@@ -7,7 +7,7 @@ heroImage: /assets/images/physics-engine/physics-engine.png
 teamSize: 1
 timeFrame: 1 Month
 toolsUsed: C++
-repo: https://github.com/St0wy/StowyPhysicsEngine
+repo: https://codeberg.org/St0wy/StowyPhysicsEngine
 ---
 
 This is a **2D physics engine** made in **C++** with no libraries.
@@ -24,7 +24,7 @@ But recently, I ported it to [raylib](https://www.raylib.com/) so that I
 could compile the project to a web version with [Emscripten](https://emscripten.org/).
 You can left click to place circles and right click to place squares.
 
-You can read the project's documentation on [Read the Docs](https://stowy-physics-engine.readthedocs.io/en/latest/index.html) and see the source on [GitHub](https://github.com/St0wy/StowyPhysicsEngine).
+You can read the project's documentation on [Read the Docs](https://stowy-physics-engine.readthedocs.io/en/latest/index.html) and see the source on [GitHub](https://codeberg.org/St0wy/StowyPhysicsEngine).
 
 <div class="spinner" id="spinner"></div>
 <div class="emscripten" id="status">Downloading...</div>

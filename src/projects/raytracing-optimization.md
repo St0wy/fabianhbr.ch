@@ -7,7 +7,7 @@ heroImage: /assets/images/raytracing/bigScene.png
 teamSize: 1
 timeFrame: 1.5 Month
 toolsUsed: Rust
-repo: https://github.com/St0wy/raytracing
+repo: https://codeberg.org/St0wy/raytracing
 ---
 
 This project was made during the **optimization** module at SAE Institute.
@@ -27,13 +27,13 @@ Mostly on subjects such as :
 -   **CPU Caches**: I learned about the L1, L2 and L3 caches and how that impacts performance and data structures.
 -   **Pipelining and Branch Prediction**: The way instructions are executed on the CPU means that it has to guess where to go where there's an `if` in the code.
 -   **SIMD**: I learned how SIMD can greatly impact performance and how to use it with intrinsics.
-    I did a small [solar system simulation project](https://github.com/St0wy/FunWithVectors) that I then optimized with SIMD to see its impact.
+    I did a small [solar system simulation project](https://codeberg.org/St0wy/FunWithVectors) that I then optimized with SIMD to see its impact.
 -   **Reading Assembly**: I learned to read the most common x86 assembly instructions. I also implemented some simple functions in assembly, the most complex one being bubble sort.
 -   **Multithreading**: I learned about the multithreading primitives present in C++ during the classes. I also used [Rayon](https://github.com/rayon-rs/rayon) to parallelize my Ray Tracing project.
 
 I also learned the **math** and logic behind **Ray Tracing**.
 
-You can see the source code of the project on [GitHub](https://github.com/St0wy/raytracing).
+You can see the source code of the project on [Codeberg](https://codeberg.org/St0wy/raytracing).
 
 ---
 

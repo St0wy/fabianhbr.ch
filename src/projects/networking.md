@@ -7,7 +7,7 @@ heroImage: /assets/images/networking/rollback-atomic-ball.png
 teamSize: 1
 timeFrame: 1 Month
 toolsUsed: C++
-repo: https://github.com/St0wy/rollback-atomic-ball
+repo: https://codeberg.org/St0wy/rollback-atomic-ball
 ---
 
 During the **networking** module at SAE Institute, the goal was to make a **Rollback Online Game**.
@@ -54,4 +54,4 @@ I wrote a blog post where I explained broadly how the online in the game works :
 	</video>
 </div>
 
-You can find the source of the project on [GitHub](https://github.com/St0wy/rollback-atomic-ball).
+You can find the source of the project on [Codeberg](https://codeberg.org/St0wy/rollback-atomic-ball).
