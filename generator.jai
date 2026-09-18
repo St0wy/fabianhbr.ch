@@ -190,6 +190,24 @@ parse_project_frontmatter :: (frontmatter: string) -> Project {
 	return project;
 }
 
+// RSS 2.0 requires dates in the RFC 822 format (e.g. "Sat, 25 Jul 2026 00:00:00 GMT")
+calendar_to_rfc822_string :: (ct: Calendar_Time) -> string {
+	DAY_NAMES :: string.["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+	MONTH_NAMES :: string.["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+	// The frontmatter only sets the date, so round-trip through Apollo_Time to get the day of the week
+	utc := to_calendar(calendar_to_apollo(ct), .UTC);
+	two_digits :: #bake_arguments formatInt(minimum_digits = 2);
+	result := tprint("%, % % % %:%:% GMT",
+		DAY_NAMES[utc.day_of_week_starting_at_0],
+		two_digits(utc.day_of_month_starting_at_0 + 1),
+		MONTH_NAMES[utc.month_starting_at_0], utc.year,
+		two_digits(utc.hour),
+		two_digits(utc.minute),
+		two_digits(utc.second)
+	);
+	return result;
+}
+
 render_jaitml :: (path: string) -> string {
 	content, ok := read_entire_file(path);
 	if !ok return "";
@@ -199,12 +217,12 @@ render_jaitml :: (path: string) -> string {
 	result: String_Builder;
 
 	i := 0;
-	while i < content.count - 1 {
+	while i < content.count {
 		s := slice(content, i, content.count - 1);
 		if !code {
 			if starts_with(s, OPEN_TAG) {
 				str := builder_to_string(*sb);
-				if str != "" then print_to_builder(*result, "echo(\"%\");\n", str);
+				if str != "" then print_to_builder(*result, "append(*jaitml_string_builder, \"%\");\n", str);
 				code = true;
 				i += OPEN_TAG.count;
 			} else {
@@ -232,7 +250,7 @@ render_jaitml :: (path: string) -> string {
 
 	str := builder_to_string(*sb);
 	if str != "" {
-		if !code then print_to_builder(*result, "echo(\"%\");\n", str);
+		if !code then print_to_builder(*result, "append(*jaitml_string_builder, \"%\");\n", str);
 		else print_to_builder(*result, "%\n", str);
 	}
 
