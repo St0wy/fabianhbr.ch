@@ -4,6 +4,7 @@ description: Multiple projects made during the networking module at SAE Institut
 slug: rollback-atomic-ball
 pubDatetime: 2022-01-03
 heroImage: /assets/images/networking/rollback-atomic-ball.png
+heroImageAlt: Two glowing drop-shaped players on each side of a pink divider, above a row of pink spikes
 teamSize: 1
 timeFrame: 1 Month
 toolsUsed: C++

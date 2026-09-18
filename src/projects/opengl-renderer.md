@@ -4,6 +4,7 @@ description: A deferred PBR renderer made in C++ with OpenGL. Implements Image-B
 slug: opengl-renderer
 pubDatetime: 2023-06-18
 heroImage: /assets/images/opengl-scene/chat.jpg
+heroImageAlt: Rendered leather backpack with an axe and a mug, a cat statue and an 8-ball on a mossy rock overlooking hills
 teamSize: 1
 timeFrame: 3 Months
 toolsUsed: C++ / OpenGL

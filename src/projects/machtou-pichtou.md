@@ -4,6 +4,7 @@ description: Game made during the Epic Game Jam 2026 over one weekend using a cu
 slug: machtou-pichtou
 pubDatetime: 2026-07-05
 heroImage: /assets/images/machtou-pichtou/machtou.jpg
+heroImageAlt: A villager sliding down a snowy hill past llamas toward red-plumed knights, with a thatched hut at the top
 teamSize: 3
 timeFrame: 48 hours
 toolsUsed: Custom C Engine

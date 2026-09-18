@@ -4,6 +4,7 @@ description: Game made during the LvlUp Game Jam 2024 in 48 hours with a team of
 slug: need-more-bullets
 pubDatetime: 2024-02-18
 heroImage: /assets/images/need-more-bullets/need_more_bullets.png
+heroImageAlt: Need More Bullets title screen over a neon-lit city at sunset
 teamSize: 3
 timeFrame: 48 hours
 toolsUsed: Unity
@@ -37,6 +38,6 @@ You can play the game on [Itch.io](https://stowy.itch.io/need-more-bullets) and 
 ## Screenshots
 
 <div class="screenshots">
-	<img src="/assets/images/need-more-bullets/nmb1.png" />
-	<img src="/assets/images/need-more-bullets/nmb2.png" />
+	<img src="/assets/images/need-more-bullets/nmb1.png" alt="First-person view of a pink gun shooting at enemy turrets in a neon city arena" />
+	<img src="/assets/images/need-more-bullets/nmb2.png" alt="First-person view of a pink gun facing distant enemies in a neon city arena at sunset" />
 </div>

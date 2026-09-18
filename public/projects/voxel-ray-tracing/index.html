@@ -9,7 +9,7 @@
 		<meta property="og:description" content="Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst."/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="https://fabianhbr.ch/projects/voxel-ray-tracing/"/>
-		<meta property="og:image" content="https://fabianhbr.ch/assets/images/bsc/final.jpg"/>
+		<meta property="og:image" content="https://fabianhbr.ch/assets/images/bsc/final.jpg"/><meta property="og:image:alt" content="Path-traced voxel Cornell box with red, green and blue cubes"/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />
@@ -34,7 +34,7 @@
 <main>
 	<article>
 		<header>
-			<img src="/assets/images/bsc/final.jpg" />
+			<img src="/assets/images/bsc/final.jpg" alt="Path-traced voxel Cornell box with red, green and blue cubes" />
 			<h1>Bachelor Thesis - Voxel Path Tracing</h1>
 			<div class="project-details">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 448 512" fill="currentColor" class="mr-2"> <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z" stroke="currentColor"></path> </svg>
@@ -67,12 +67,12 @@ The thesis document was made in <strong>Typst</strong>.</p><p>It features :</p><
 and see the source of the <a href="https://codeberg.org/St0wy/bachelor-thesis">thesis is also on Codeberg</a>.</p><hr/><h2>The Thesis</h2><object data="https://st0wy.codeberg.page/bachelor-thesis/main.pdf" type="application/pdf" width="100%" style="aspect-ratio: 9/10; margin-bottom: 14px;">
 	<p>Unable to display PDF file. <a href="https://st0wy.codeberg.page/bachelor-thesis/main.pdf">Download</a> instead.</p>
 </object><p>You can find the pdf at <a href="https://st0wy.codeberg.page/bachelor-thesis/main.pdf">https://st0wy.codeberg.page/bachelor-thesis/main.pdf</a>.</p><hr/><h2>Screenshots</h2><div class="screenshots">
-	<img src="/assets/images/bsc/smooth-shadows-noisy.png" />
-	<img src="/assets/images/bsc/path-trace.jpg" />
-	<img src="/assets/images/bsc/env-map.png" />
-	<img src="/assets/images/bsc/final.jpg" />
-	<img src="/assets/images/bsc/final-pixel.jpg" />
-	<img src="/assets/images/bsc/final-russian.jpg" />
+	<img src="/assets/images/bsc/smooth-shadows-noisy.png" alt="Voxel model rendered with noisy soft shadows, with the debug overlay open" />
+	<img src="/assets/images/bsc/path-trace.jpg" alt="Path-traced voxel house with a wooden roof on a grassy island" />
+	<img src="/assets/images/bsc/env-map.png" alt="Voxel house and tower lit by a sky environment map" />
+	<img src="/assets/images/bsc/final.jpg" alt="Path-traced voxel Cornell box with red, green and blue cubes" />
+	<img src="/assets/images/bsc/final-pixel.jpg" alt="The same Cornell box scene with per-pixel lighting enabled" />
+	<img src="/assets/images/bsc/final-russian.jpg" alt="The same Cornell box scene with Russian roulette enabled" />
 </div>
 	</article>
 </main>
@@ -88,6 +88,7 @@ and see the source of the <a href="https://codeberg.org/St0wy/bachelor-thesis">t
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

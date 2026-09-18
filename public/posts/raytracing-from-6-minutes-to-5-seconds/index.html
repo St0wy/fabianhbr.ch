@@ -241,6 +241,7 @@ It&#39;s not quite real-time, the GPU might be needed for that. And there are pr
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

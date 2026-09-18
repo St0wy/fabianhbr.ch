@@ -9,7 +9,7 @@
 		<meta property="og:description" content="Project made to understand better how GPUs work, and get a better feeling of how rasterization works."/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="https://fabianhbr.ch/projects/software-rasterizer/"/>
-		<meta property="og:image" content="https://fabianhbr.ch/assets/images/software-raster/output.png"/>
+		<meta property="og:image" content="https://fabianhbr.ch/assets/images/software-raster/output.png"/><meta property="og:image:alt" content="Software-rendered 3D head model on a checkered floor"/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />
@@ -34,7 +34,7 @@
 <main>
 	<article>
 		<header>
-			<img src="/assets/images/software-raster/output.png" />
+			<img src="/assets/images/software-raster/output.png" alt="Software-rendered 3D head model on a checkered floor" />
 			<h1>Software Rasterizer</h1>
 			<div class="project-details">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 448 512" fill="currentColor" class="mr-2"> <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z" stroke="currentColor"></path> </svg>
@@ -62,8 +62,8 @@
 			<hr />
 		</header>
 		<p>A CPU-based rasterizer built in Jai, following the <a href="https://github.com/ssloy/tinyrenderer">tinyrenderer</a> guide by Dmitry V. Sokolov.</p><p>The goal of this project is to understand the graphics pipeline, from raw vertices to a shaded image without the help of the GPU.</p><h2>Features</h2><ul><li><strong>Pipeline:</strong> Perspective-correct interpolation, projection matrix with infinite depth.</li><li><strong>Lighting &amp; Post:</strong> Phong shading, HDR (ACES tonemapping), and Gamma correction.</li><li><strong>Mapping:</strong> Tangent-space Normal maps, bilinear texture filtering and handmade <code>.obj</code> file loading.</li><li><strong>Output:</strong> Writes to PNG via <a href="https://github.com/nothings/stb">stb_image_write</a>.</li></ul><p>You can see the source of the project on <a href="https://codeberg.org/St0wy/tinyrenderer">Codeberg</a>.</p><div class="screenshots">
-	<img src="/assets/images/software-raster/dragon.png" />
-	<img src="/assets/images/software-raster/head.png" />
+	<img src="/assets/images/software-raster/dragon.png" alt="Software-rendered horned red demon model on a checkered floor" />
+	<img src="/assets/images/software-raster/head.png" alt="Software-rendered 3D head model with normal mapping on a checkered floor" />
 </div>
 	</article>
 </main>
@@ -79,6 +79,7 @@
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

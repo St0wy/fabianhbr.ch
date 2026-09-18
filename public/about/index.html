@@ -96,6 +96,7 @@
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

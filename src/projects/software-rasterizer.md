@@ -4,6 +4,7 @@ description: Project made to understand better how GPUs work, and get a better f
 slug: software-rasterizer
 pubDatetime: 2026-01-03
 heroImage: /assets/images/software-raster/output.png
+heroImageAlt: Software-rendered 3D head model on a checkered floor
 teamSize: 1
 timeFrame: 1 month
 toolsUsed: Jai
@@ -23,6 +24,6 @@ The goal of this project is to understand the graphics pipeline, from raw vertic
 You can see the source of the project on [Codeberg](https://codeberg.org/St0wy/tinyrenderer).
 
 <div class="screenshots">
-	<img src="/assets/images/software-raster/dragon.png" />
-	<img src="/assets/images/software-raster/head.png" />
+	<img src="/assets/images/software-raster/dragon.png" alt="Software-rendered horned red demon model on a checkered floor" />
+	<img src="/assets/images/software-raster/head.png" alt="Software-rendered 3D head model with normal mapping on a checkered floor" />
 </div>

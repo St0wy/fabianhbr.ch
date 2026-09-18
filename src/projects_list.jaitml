@@ -3,7 +3,7 @@
 <div class="project-grid">
 	<?jai for project: projects { ?>
 	<a href="/projects/<?jai echo("%", escape(project.slug)); ?>" class="project-card">
-		<img src="<?jai echo("%", escape(project.hero_image)); ?>" />
+		<img src="<?jai echo("%", escape(project.hero_image)); ?>" alt="" />
 		<div class="project-info">
 			<h3><?jai echo("%", escape(project.title)); ?></h3>
 			<p><?jai echo("%", escape(project.description)); ?></p>

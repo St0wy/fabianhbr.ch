@@ -9,7 +9,7 @@
 		<meta property="og:description" content="Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball."/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="https://fabianhbr.ch/projects/rollback-atomic-ball/"/>
-		<meta property="og:image" content="https://fabianhbr.ch/assets/images/networking/rollback-atomic-ball.png"/>
+		<meta property="og:image" content="https://fabianhbr.ch/assets/images/networking/rollback-atomic-ball.png"/><meta property="og:image:alt" content="Two glowing drop-shaped players on each side of a pink divider, above a row of pink spikes"/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />
@@ -34,7 +34,7 @@
 <main>
 	<article>
 		<header>
-			<img src="/assets/images/networking/rollback-atomic-ball.png" />
+			<img src="/assets/images/networking/rollback-atomic-ball.png" alt="Two glowing drop-shaped players on each side of a pink divider, above a row of pink spikes" />
 			<h1>Networking - Rollback Atomic Ball</h1>
 			<div class="project-details">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 448 512" fill="currentColor" class="mr-2"> <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z" stroke="currentColor"></path> </svg>
@@ -94,6 +94,7 @@ reliable data transfer using UDP.</p><p>I wrote a blog post where I explained br
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

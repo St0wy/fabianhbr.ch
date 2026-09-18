@@ -36,7 +36,7 @@
 <div class="project-grid">
 	
 	<a href="/projects/machtou-pichtou" class="project-card">
-		<img src="/assets/images/machtou-pichtou/machtou.jpg" />
+		<img src="/assets/images/machtou-pichtou/machtou.jpg" alt="" />
 		<div class="project-info">
 			<h3>Machtou Pichtou Defenders: Slip and Slide</h3>
 			<p>Game made during the Epic Game Jam 2026 over one weekend using a custom C engine developed by a team member.</p>
@@ -44,7 +44,7 @@
 	</a>
 	
 	<a href="/projects/software-rasterizer" class="project-card">
-		<img src="/assets/images/software-raster/output.png" />
+		<img src="/assets/images/software-raster/output.png" alt="" />
 		<div class="project-info">
 			<h3>Software Rasterizer</h3>
 			<p>Project made to understand better how GPUs work, and get a better feeling of how rasterization works.</p>
@@ -52,7 +52,7 @@
 	</a>
 	
 	<a href="/projects/voxel-ray-tracing" class="project-card">
-		<img src="/assets/images/bsc/final.jpg" />
+		<img src="/assets/images/bsc/final.jpg" alt="" />
 		<div class="project-info">
 			<h3>Bachelor Thesis - Voxel Path Tracing</h3>
 			<p>Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst.</p>
@@ -60,7 +60,7 @@
 	</a>
 	
 	<a href="/projects/need-more-bullets" class="project-card">
-		<img src="/assets/images/need-more-bullets/need_more_bullets.png" />
+		<img src="/assets/images/need-more-bullets/need_more_bullets.png" alt="" />
 		<div class="project-info">
 			<h3>Need More Bullets</h3>
 			<p>Game made during the LvlUp Game Jam 2024 in 48 hours with a team of 3 programmers where it won the public&#39;s choice award.</p>
@@ -68,7 +68,7 @@
 	</a>
 	
 	<a href="/projects/opengl-renderer" class="project-card">
-		<img src="/assets/images/opengl-scene/chat.jpg" />
+		<img src="/assets/images/opengl-scene/chat.jpg" alt="" />
 		<div class="project-info">
 			<h3>OpenGL - Deferred PBR Renderer</h3>
 			<p>A deferred PBR renderer made in C++ with OpenGL. Implements Image-Based Lighting, glTF format loading, GPU-compressed textures, Normal Maps, Cascaded Shadow Maps, Bloom and SSAO.</p>
@@ -76,7 +76,7 @@
 	</a>
 	
 	<a href="/projects/raytracing-optimizations" class="project-card">
-		<img src="/assets/images/raytracing/bigScene.png" />
+		<img src="/assets/images/raytracing/bigScene.png" alt="" />
 		<div class="project-info">
 			<h3>Optimizations: Ray Tracing in One Weekend</h3>
 			<p>Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds.</p>
@@ -84,7 +84,7 @@
 	</a>
 	
 	<a href="/projects/physics-engine" class="project-card">
-		<img src="/assets/images/physics-engine/physics-engine.png" />
+		<img src="/assets/images/physics-engine/physics-engine.png" alt="" />
 		<div class="project-info">
 			<h3>2D C++ Physics Engine</h3>
 			<p>This is a 2D physics engine made in C++ with no libraries. It has a demo project to showcase it made with SFML and a web demo made with Raylib. The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 318&#39;000 views.</p>
@@ -92,7 +92,7 @@
 	</a>
 	
 	<a href="/projects/rollback-atomic-ball" class="project-card">
-		<img src="/assets/images/networking/rollback-atomic-ball.png" />
+		<img src="/assets/images/networking/rollback-atomic-ball.png" alt="" />
 		<div class="project-info">
 			<h3>Networking - Rollback Atomic Ball</h3>
 			<p>Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball.</p>
@@ -115,6 +115,7 @@
 	images.forEach(img => {
 		img.addEventListener('click', function() {
 			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
 			lightbox.style.display = 'block';
 		});
 	});

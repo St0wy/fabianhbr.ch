@@ -28,6 +28,7 @@ Project :: struct {
 	pub_date_time: Calendar_Time;
 	description: string;
 	hero_image: string;
+	hero_image_alt: string;
 	team_size: int;
 	time_frame: string;
 	tools_used: string;
@@ -97,14 +98,16 @@ description := "";
 page_url := "";
 og_type := "";
 og_image := "";
+og_image_alt := "";
 
-set_page_meta :: (page_title: string, path: string, page_description := "", type := "website", image := "") {
+set_page_meta :: (page_title: string, path: string, page_description := "", type := "website", image := "", image_alt := "") {
 	og_title = page_title;
 	title = ifx page_title == SITE_NAME then SITE_NAME else tprint("% - %", page_title, SITE_NAME);
 	description = ifx page_description.count > 0 then page_description else DEFAULT_DESCRIPTION;
 	page_url = tprint("%1%2", SITE_URL, path);
 	og_type = type;
 	og_image = ifx image.count > 0 then tprint("%1%2", SITE_URL, image) else "";
+	og_image_alt = image_alt;
 }
 
 // Used by the templates to escape values before inserting them in the HTML
@@ -194,6 +197,8 @@ parse_project_frontmatter :: (frontmatter: string) -> Project {
 				project.description = value;
 			case "heroImage";
 				project.hero_image = value;
+			case "heroImageAlt";
+				project.hero_image_alt = value;
 			case "teamSize";
 				project.team_size = to_integer(value);
 			case "toolsUsed";
@@ -342,7 +347,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for projects {
-			print_to_builder(*sb, "set_page_meta(projects[%1].title, tprint(\"/projects/\%/\", projects[%1].slug), projects[%1].description, image = projects[%1].hero_image);", it_index);
+			print_to_builder(*sb, "set_page_meta(projects[%1].title, tprint(\"/projects/\%/\", projects[%1].slug), projects[%1].description, image = projects[%1].hero_image, image_alt = projects[%1].hero_image_alt);", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/project.html.jaitml\", tprint(\"\%projects/%/index.html\", BUILD_DIR), #code { PROJECT_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);

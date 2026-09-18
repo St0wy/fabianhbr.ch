@@ -9,7 +9,7 @@
 		<meta property="og:description" content="<?jai echo("%", escape(description)); ?>"/>
 		<meta property="og:type" content="<?jai echo("%", escape(og_type)); ?>"/>
 		<meta property="og:url" content="<?jai echo("%", escape(page_url)); ?>"/>
-		<?jai if og_image.count > 0 { ?><meta property="og:image" content="<?jai echo("%", escape(og_image)); ?>"/><?jai } ?>
+		<?jai if og_image.count > 0 { ?><meta property="og:image" content="<?jai echo("%", escape(og_image)); ?>"/><?jai if og_image_alt.count > 0 { ?><meta property="og:image:alt" content="<?jai echo("%", escape(og_image_alt)); ?>"/><?jai } ?><?jai } ?>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />

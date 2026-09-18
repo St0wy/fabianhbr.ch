@@ -4,6 +4,7 @@ description: Final project of my studies at SAE Institute Geneva. Implemented Vo
 slug: voxel-ray-tracing
 pubDatetime: 2024-07-19
 heroImage: /assets/images/bsc/final.jpg
+heroImageAlt: Path-traced voxel Cornell box with red, green and blue cubes
 teamSize: 1
 timeFrame: 7 Months
 toolsUsed: Jai / Vulkan
@@ -46,10 +47,10 @@ You can find the pdf at [https://st0wy.codeberg.page/bachelor-thesis/main.pdf](h
 ## Screenshots
 
 <div class="screenshots">
-	<img src="/assets/images/bsc/smooth-shadows-noisy.png" />
-	<img src="/assets/images/bsc/path-trace.jpg" />
-	<img src="/assets/images/bsc/env-map.png" />
-	<img src="/assets/images/bsc/final.jpg" />
-	<img src="/assets/images/bsc/final-pixel.jpg" />
-	<img src="/assets/images/bsc/final-russian.jpg" />
+	<img src="/assets/images/bsc/smooth-shadows-noisy.png" alt="Voxel model rendered with noisy soft shadows, with the debug overlay open" />
+	<img src="/assets/images/bsc/path-trace.jpg" alt="Path-traced voxel house with a wooden roof on a grassy island" />
+	<img src="/assets/images/bsc/env-map.png" alt="Voxel house and tower lit by a sky environment map" />
+	<img src="/assets/images/bsc/final.jpg" alt="Path-traced voxel Cornell box with red, green and blue cubes" />
+	<img src="/assets/images/bsc/final-pixel.jpg" alt="The same Cornell box scene with per-pixel lighting enabled" />
+	<img src="/assets/images/bsc/final-russian.jpg" alt="The same Cornell box scene with Russian roulette enabled" />
 </div>

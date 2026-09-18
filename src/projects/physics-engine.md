@@ -4,6 +4,7 @@ description: This is a 2D physics engine made in C++ with no libraries. It has a
 slug: physics-engine
 pubDatetime: 2022-07-15
 heroImage: /assets/images/physics-engine/physics-engine.png
+heroImageAlt: White circles and squares piling up on a platform in the physics simulation
 teamSize: 1
 timeFrame: 1 Month
 toolsUsed: C++

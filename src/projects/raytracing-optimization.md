@@ -4,6 +4,7 @@ description: Project where I implemented the Ray Tracing in One Weekend book in 
 slug: raytracing-optimizations
 pubDatetime: 2023-02-15
 heroImage: /assets/images/raytracing/bigScene.png
+heroImageAlt: Ray-traced scene with many small colorful spheres around large glass, metal and matte spheres
 teamSize: 1
 timeFrame: 1.5 Month
 toolsUsed: Rust
@@ -40,7 +41,7 @@ You can see the source code of the project on [Codeberg](https://codeberg.org/St
 ## Screenshots
 
 <div class="screenshots">
-	<img src="/assets/images/raytracing/bigScene.png" />
-	<img src="/assets/images/raytracing/perlinEarth.png" />
-	<img src="/assets/images/raytracing/cornell.png" />
+	<img src="/assets/images/raytracing/bigScene.png" alt="Ray-traced scene with many small colorful spheres around large glass, metal and matte spheres" />
+	<img src="/assets/images/raytracing/perlinEarth.png" alt="Earth-textured sphere above a marble-like Perlin noise floor" />
+	<img src="/assets/images/raytracing/cornell.png" alt="Ray-traced Cornell box with a red and a green wall and two white boxes" />
 </div>
