@@ -1,0 +1,17 @@
+Copyright (c) 2026 Fabian Huber
+
+The written content of this repository and of the website https://fabianhbr.ch
+is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+4.0 International License (CC BY-NC-ND 4.0). This covers:
+
+- the blog posts in src/posts/
+- the project pages in src/projects/
+- the text of the pages in src/*.jaitml
+- the copies of this text generated in public/
+
+To view a copy of this license, visit
+https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+Code snippets that appear inside the posts and project pages are additionally
+available under the MIT license (see LICENSE), so they can be reused like the
+rest of the code.
