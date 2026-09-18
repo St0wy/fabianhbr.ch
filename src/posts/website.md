@@ -401,7 +401,7 @@ load_entries :: ($T: Type, folder: string) -> [] T {
 
 If you are reading this, it means that it worked!
 Now since everything runs at compile time, meaning that it is "interpreted", you might wonder how performant it is.
-Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using [Nushell's timeit](https://www.nushell.sh/commands/docs/timeit.html)) is ~685ms.
+Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using [Nushell's timeit](https://www.nushell.sh/commands/docs/timeit.html)) is ~700ms.
 Most of the time is spent parsing the Markdown, which I'm sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
 I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.

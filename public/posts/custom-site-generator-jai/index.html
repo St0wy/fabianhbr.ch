@@ -304,7 +304,7 @@ load_entries :: ($T: Type, folder: string) -&gt; [] T {
 	});
 }</code></pre><h2>Conclusion</h2><p>If you are reading this, it means that it worked!
 Now since everything runs at compile time, meaning that it is &quot;interpreted&quot;, you might wonder how performant it is.
-Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~685ms.
+Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~700ms.
 Most of the time is spent parsing the Markdown, which I&#39;m sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
 I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p><strong>Update (September 2026):</strong> This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by <code>set_page_meta</code>, which also handles the description and the Open Graph tags.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
