@@ -1,0 +1,41 @@
+<?jai include("header.jaitml"); ?>
+<main>
+	<h2>Subscribe</h2>
+	<p>
+		The easiest way to follow new posts is with the <b>RSS feed</b>.
+		Copy this address into your feed reader:
+	</p>
+	<div class="feed-url">
+		<code id="feed-url">https://fabianhbr.ch/rss.xml</code>
+		<button id="copy-feed-url" type="button">Copy</button>
+	</div>
+	<p>
+		New to RSS? <a href="https://aboutfeeds.com">About Feeds</a> explains what it is and how to get started.
+	</p>
+	<h2>Elsewhere</h2>
+	<p>I also share new posts on social media:</p>
+	<table class="gbt2">
+		<tbody>
+			<tr><td>Bluesky:</td><td><a href="//bsky.app/profile/stowy.ch">@stowy.ch</a></td></tr>
+			<tr><td>Mastodon:</td><td><a href="//mastodon.gamedev.place/@stowy">@stowy@mastodon.gamedev.place</a></td></tr>
+		</tbody>
+	</table>
+</main>
+<script>
+	const copyButton = document.getElementById('copy-feed-url');
+	const feedUrl = document.getElementById('feed-url');
+	copyButton.addEventListener('click', function() {
+		const setLabel = function(label) {
+			copyButton.textContent = label;
+			setTimeout(function() { copyButton.textContent = 'Copy'; }, 2000);
+		};
+		navigator.clipboard.writeText(feedUrl.textContent).then(function() {
+			setLabel('Copied!');
+		}, function() {
+			// Clipboard access can be denied, so select the address to let the visitor copy it themselves
+			window.getSelection().selectAllChildren(feedUrl);
+			setLabel('Selected');
+		});
+	});
+</script>
+<?jai include("footer.jaitml"); ?>

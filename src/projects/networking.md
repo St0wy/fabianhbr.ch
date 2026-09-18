@@ -47,7 +47,7 @@ I wrote a blog post where I explained broadly how the online in the game works :
 -   **How to do Rollback Netcode**: We also looked at how various games implement their onlines and we then used a rollback networking engine made by our teacher.
 -   **Using a custom physics engine in a game**: For rollback to work properly, we had to take our physics engine and use it in a real game.
 
-<div class="grid place-items-center">
+<div>
 	<video width="640" height="480" loop muted autoplay controls>
 		<source src="/assets/images/networking/atomicDemo.mp4" type="video/mp4" />
 		Your browser does not support the video tag.

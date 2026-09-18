@@ -38,7 +38,7 @@ You can read the project's documentation on [Read the Docs](https://stowy-physic
     "
     tabindex="-1"></canvas>
 
-<script is:inline>
+<script>
 var statusElement = document.getElementById("status"),
     progressElement = document.getElementById("progress"),
     spinnerElement = document.getElementById("spinner"),
