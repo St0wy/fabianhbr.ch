@@ -86,7 +86,26 @@ projects :: #run -> [] Project {
 	return sorted;
 }
 
+SITE_NAME :: "Fabian Huber";
+SITE_URL :: "https://fabianhbr.ch";
+DEFAULT_DESCRIPTION :: "Website of Fabian Huber. Presentation of my projects and blog posts.";
+
+// Metadata of the page being generated, used by header.jaitml
 title := "";
+og_title := "";
+description := "";
+page_url := "";
+og_type := "";
+og_image := "";
+
+set_page_meta :: (page_title: string, path: string, page_description := "", type := "website", image := "") {
+	og_title = page_title;
+	title = ifx page_title == SITE_NAME then SITE_NAME else tprint("% - %", page_title, SITE_NAME);
+	description = ifx page_description.count > 0 then page_description else DEFAULT_DESCRIPTION;
+	page_url = tprint("%1%2", SITE_URL, path);
+	og_type = type;
+	og_image = ifx image.count > 0 then tprint("%1%2", SITE_URL, image) else "";
+}
 
 // Used by the templates to escape values before inserting them in the HTML
 escape :: (text: string) -> string {
@@ -314,7 +333,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for posts {
-			print_to_builder(*sb, "title = \"% - Fabian Huber\";", it.title);
+			print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\");", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/post.html.jaitml\", tprint(\"\%posts/%/index.html\", BUILD_DIR), #code { POST_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);
@@ -323,21 +342,21 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for projects {
-			print_to_builder(*sb, "title = \"% - Fabian Huber\";", it.title);
+			print_to_builder(*sb, "set_page_meta(projects[%1].title, tprint(\"/projects/\%/\", projects[%1].slug), projects[%1].description, image = projects[%1].hero_image);", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/project.html.jaitml\", tprint(\"\%projects/%/index.html\", BUILD_DIR), #code { PROJECT_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);
 	};
 
-	title = "Fabian Huber";
+	set_page_meta(SITE_NAME, "/");
 	execute_jaitml("src/index.html.jaitml", tprint("%index.html", BUILD_DIR));
-	title = "Posts - Fabian Huber";
+	set_page_meta("Posts", "/posts/");
 	execute_jaitml("src/posts.html.jaitml", tprint("%posts/index.html", BUILD_DIR));
-	title = "Projects - Fabian Huber";
+	set_page_meta("Projects", "/projects/");
 	execute_jaitml("src/projects.html.jaitml", tprint("%projects/index.html", BUILD_DIR));
-	title = "About - Fabian Huber";
+	set_page_meta("About", "/about/");
 	execute_jaitml("src/about.html.jaitml", tprint("%about/index.html", BUILD_DIR));
-	title = "Subscribe - Fabian Huber";
+	set_page_meta("Subscribe", "/subscribe/");
 	execute_jaitml("src/subscribe.html.jaitml", tprint("%subscribe/index.html", BUILD_DIR));
 
 	execute_jaitml("src/rss.xml.jaitml", tprint("%rss.xml", BUILD_DIR));
