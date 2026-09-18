@@ -7,14 +7,14 @@
 
         <?jai for posts { ?>
             <item>
-                <title><?jai echo("%", Markdown.escape_for_html(it.title)); ?></title>
+                <title><?jai echo("%", escape(it.title)); ?></title>
 
-                <link>https://fabianhbr.ch/posts/<?jai echo("%", it.slug); ?></link>
-                <guid isPermaLink="true">https://fabianhbr.ch/posts/<?jai echo("%", it.slug); ?></guid>
+                <link>https://fabianhbr.ch/posts/<?jai echo("%", escape(it.slug)); ?></link>
+                <guid isPermaLink="true">https://fabianhbr.ch/posts/<?jai echo("%", escape(it.slug)); ?></guid>
                 <description><![CDATA[<?jai echo("%", it.description); ?>]]></description>
-                <pubDate><?jai echo("%", Markdown.escape_for_html(calendar_to_rfc822_string(it.pub_date_time))); ?></pubDate>
+                <pubDate><?jai echo("%", escape(calendar_to_rfc822_string(it.pub_date_time))); ?></pubDate>
                 <?jai for tag: it.tags { ?>
-                    <category><?jai echo("%", tag); ?></category>
+                    <category><?jai echo("%", escape(tag)); ?></category>
                 <?jai } ?>
             </item>
         <?jai } ?>

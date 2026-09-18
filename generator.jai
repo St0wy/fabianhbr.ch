@@ -88,6 +88,11 @@ projects :: #run -> [] Project {
 
 title := "";
 
+// Used by the templates to escape values before inserting them in the HTML
+escape :: (text: string) -> string {
+	return Markdown.escape_for_html(text);
+}
+
 advance_to_newline :: inline (str: *string) {
 	while str.count > 0 && str.*[0] != "\n" advance(str);
 }

@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title><?jai echo("%", title); ?></title>
+		<title><?jai echo("%", escape(title)); ?></title>
 		<meta name="description" content="Website of Fabian Huber. Presentation of my projects and blog posts."/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
