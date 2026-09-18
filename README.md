@@ -26,7 +26,6 @@ Since the CI can't run Jai, `public/` is committed: regenerate the website befor
 
 - The code is licensed under the [MIT license](LICENSE).
 - The writing (blog posts, project pages and the text of the website) is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). See [LICENSE-CONTENT](LICENSE-CONTENT).
-  The website's [`robots.txt`](public/robots.txt) also asks AI crawlers not to use it for training.
 - `public/modern-normalize.css` and `public/scripts/nushell.min.js` are third-party files under their own licenses.
 
 ## AI disclosure
