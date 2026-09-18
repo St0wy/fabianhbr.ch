@@ -64,8 +64,9 @@ Something that is easy to do in Jai, using the <code>#run</code> directive where
 	&lt;p&gt;Hi.&lt;/p&gt;
 &lt;/main&gt;
 &lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</code></pre><p>Would be converted to :</p><pre><code class="language-jai">include(&quot;header.jaitml&quot;);
-echo(&quot;&lt;main&gt;\n&lt;p&gt;Hi.&lt;/p&gt;\n&lt;/main&gt;\n&quot;);
-include(&quot;footer.jaitml&quot;);</code></pre><p>Then to execute this code, I need to get the code string as a constant, meaning that it has to go through another <code>#run</code> directive (so this is at compile-compile-time).
+append(*jaitml_string_builder, &quot;&lt;main&gt;\n&lt;p&gt;Hi.&lt;/p&gt;\n&lt;/main&gt;\n&quot;);
+include(&quot;footer.jaitml&quot;);</code></pre><p>The HTML is appended directly to the string builder instead of going through <code>echo</code>.
+Since <code>echo</code> takes a format string, any <code>%</code> in my HTML would otherwise be interpreted as a format specifier.</p><p>Then to execute this code, I need to get the code string as a constant, meaning that it has to go through another <code>#run</code> directive (so this is at compile-compile-time).
 It can then be <code>#insert</code>-ed.</p><pre><code class="language-jai">code :: #run render_jaitml(path);
 #insert,scope() code;</code></pre><p>The templating system mostly works with two macros: <code>include</code> and <code>echo</code>. These are declared just above the call to <code>render_jaitml</code> like so:</p><pre><code class="language-jai">jaitml_string_builder: String_Builder;
 echo :: (format_string: string, args: ..Any) #expand {
@@ -127,18 +128,20 @@ My final <code>execute_jaitml</code> procedure looks like this:</p><pre><code cl
 	}
 }</code></pre><p>One other problem is that any file included through <code>include</code> is also not able to read this information.
 This was a problem when setting the title of the page since it had to be set in the header.
-To fix that, I declared a global <code>title := &quot;&quot;;</code> variable that I change before calling <code>execute_jaitml</code>.
+To fix that, I declared a few global variables for the page metadata (the title, the description and the Open Graph data used for link previews),
+that a <code>set_page_meta</code> procedure fills before calling <code>execute_jaitml</code>.
 This means I could also do that for the post indices, and get rid of the complication with the <code>$extra_code</code>,
 but I am not sure of an ideal solution for now, as I&#39;d like to limit global data as much as possible.</p><p>Then, another problem appeared when it was time to iterate over the <code>posts</code> array and generate the pages.
 This is because <code>execute_jaitml</code> needs to be executed with the <code>#run</code>, so all the parameters must be constants.
 The problem is that when you iterate over a constant array, the iterator is not itself constant.</p><p>To go around that, I used some more metaprogramming magic and generated the code that would result from an unrolled loop:</p><pre><code class="language-jai">#insert -&gt; string {
 	sb: String_Builder;
 	for posts {
-		print_to_builder(*sb, &quot;title = \&quot;% - Fabian Huber\&quot;;&quot;, it.title);
+		print_to_builder(*sb, &quot;set_page_meta(posts[%1].title, tprint(\&quot;/posts/\%/\&quot;, posts[%1].slug), posts[%1].description, \&quot;article\&quot;);&quot;, it_index);
 		print_to_builder(*sb, &quot;execute_jaitml(\&quot;src/post.html.jaitml\&quot;, tprint(\&quot;\%posts/%/index.html\&quot;, BUILD_DIR), #code { POST_INDEX :: %; });&quot;, it.slug, it_index);
 	}
 	return builder_to_string(*sb);
-};</code></pre><p>And with that, the template system is complete!</p><h2>Markdown parsing</h2><p>Now to parse Markdown, I needed a way to first get an abstract syntax tree (AST) that would then be used to generate an HTML output.
+};</code></pre><p>Note that the generated code reads the title from the <code>posts</code> array instead of pasting it inside a string literal.
+My first version did the latter, which meant that a <code>&quot;</code> in a post title would have broken the compilation.</p><p>And with that, the template system is complete!</p><h2>Markdown parsing</h2><p>Now to parse Markdown, I needed a way to first get an abstract syntax tree (AST) that would then be used to generate an HTML output.
 Each node stores pointers to other nodes to be able to make the tree and some data that is stored in a <a href="https://en.wikipedia.org/wiki/Tagged_union">discriminated union</a>.
 There are two kinds of node types, block types (headings, paragraphs, etc.) and inline types (text, strong, etc.).</p><pre><code class="language-jai">Node_Kind :: enum u8 {
 	Document;
@@ -213,35 +216,98 @@ If I ever need more in the future, I can still add it later.</p><p>To emit HTML,
 
 	return builder_to_string(*sb);
 }</code></pre><p>I also simplified the frontmatter of my documents to make it easier to parse than YAML.
-Each line has one key-value pair that is separated by <code>: </code>.</p><p>Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.</p><pre><code class="language-jai">posts :: #run -&gt; [] Post {
-	posts_arr: [..] Post;
-	visit_files(&quot;src/posts&quot;, false, *posts_arr, (info: *File_Visit_Info, posts_arr: *[..] Post) {
-		if info.is_directory then return;
+Each line has one key-value pair that is separated by <code>: </code>, and each key is the name of the struct member it will be stored in:</p><pre><code class="language-yaml">---
+title: 2D C++ Physics Engine
+slug: physics-engine
+pub_date_time: 2022-07-15
+team_size: 1
+---</code></pre><p>This means that I can parse the frontmatter of both my posts and my projects with a single procedure.
+Using the type info of the struct, it finds the member with the same name as the key, and writes the value at the offset of this member depending on its type:</p><pre><code class="language-jai">Post :: struct {
+	title: string;
+	slug: string;
+	pub_date_time: Calendar_Time;
+	tags: [] string;
+	description: string;
+	bluesky_url: string;
+	html: string; @NoFrontmatter
+}
+
+parse_frontmatter :: ($T: Type, frontmatter: string, file_name: string) -&gt; T {
+	result: T;
+	info := type_info(T);
+
+	for line: split(frontmatter, &quot;\n&quot;) {
+		if trim(line).count == 0 then continue;
+
+		found, key, value := split_from_left(line, &quot;: &quot;);
+		if !found {
+			log_error(&quot;%: invalid frontmatter line, expected &#39;key: value&#39; (line: %)&quot;, file_name, line);
+			continue;
+		}
+		value = trim(value);
+
+		member := find_frontmatter_member(info, key);
+		if !member {
+			log_error(&quot;%: unknown frontmatter key (key: %, value: %)&quot;, file_name, key, value);
+			continue;
+		}
+
+		address := (cast(*u8) *result) + member.offset_in_bytes;
+		if member.type == {
+			case type_info(string);
+				(cast(*string) address).* = value;
+			case type_info(int);
+				(cast(*int) address).* = to_integer(value);
+			case type_info([] string);
+				(cast(*[] string) address).* = split(value, &quot;, &quot;);
+			case type_info(Calendar_Time);
+				// Parses the YYYY-MM-DD date into the Calendar_Time
+				// ...
+		}
+	}
+
+	return result;
+}</code></pre><p>The <code>html</code> member is filled with the output of the Markdown parser, so I marked it with a <code>@NoFrontmatter</code> note.
+Notes are attached to the type info of the members, which makes it easy to check that a document cannot overwrite it:</p><pre><code class="language-jai">find_frontmatter_member :: (info: *Type_Info_Struct, key: string) -&gt; *Type_Info_Struct_Member {
+	for * member: info.members {
+		if member.name != key continue;
+		for member.notes if it == &quot;NoFrontmatter&quot; return null;
+		return member;
+	}
+	return null;
+}</code></pre><p>Adding a new field to the frontmatter is now just a matter of adding a member to the struct.</p><p>Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.
+Since posts and projects are handled the same way, this is also a single polymorphic procedure:</p><pre><code class="language-jai">posts :: #run load_entries(Post, &quot;posts&quot;);
+projects :: #run load_entries(Project, &quot;projects&quot;);
+
+load_entries :: ($T: Type, folder: string) -&gt; [] T {
+	Visit_Data :: struct {
+		entries: [..] T;
+		folder: string;
+	}
+
+	data := Visit_Data.{folder = folder};
+	visit_files(tprint(&quot;src/%&quot;, folder), false, *data, (info: *File_Visit_Info, data: *Visit_Data) {
 		ext, ok := path_extension(info.short_name);
-		if !ok then return;
-		if ext != &quot;md&quot; then return;
+		if !ok || ext != &quot;md&quot; then return;
 
 		log(&quot;Parsing %&quot;, info.short_name);
 		markdown_file_contents := read_entire_file(info.full_name);
 		node := Markdown.parse(markdown_file_contents);
-		html := Markdown.emit_html(node);
-		post := parse_post_frontmatter(node.content);
-		post.html = html;
-		make_directory_if_it_does_not_exist(tprint(&quot;%posts/%&quot;, BUILD_DIR, post.slug));
-		array_add(posts_arr, post);
+		entry := parse_frontmatter(T, node.content, info.short_name);
+		entry.html = Markdown.emit_html(node);
+		make_directory_if_it_does_not_exist(tprint(&quot;%1%2/%3&quot;, BUILD_DIR, data.folder, entry.slug));
+		array_add(*data.entries, entry);
 	});
-	sorted := quick_sort(posts_arr, (post_a: Post, post_b: Post) -&gt; int {
-		time_a := calendar_to_apollo(post_a.pub_date_time);
-		time_b := calendar_to_apollo(post_b.pub_date_time);
-		return compare_apollo_times(time_b, time_a);
+
+	return quick_sort(data.entries, (a: T, b: T) -&gt; int {
+		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
 	});
-	return sorted;
 }</code></pre><h2>Conclusion</h2><p>If you are reading this, it means that it worked!
 Now since everything runs at compile time, meaning that it is &quot;interpreted&quot;, you might wonder how performant it is.
 Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~685ms.
 Most of the time is spent parsing the Markdown, which I&#39;m sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
-I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
+I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p><strong>Update (September 2026):</strong> This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by <code>set_page_meta</code>, which also handles the description and the Open Graph tags.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
 		<hr />
 		
 			<p>Join the conversation by <a href="https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e">replying on Bluesky</a>.</p>

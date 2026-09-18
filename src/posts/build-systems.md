@@ -1,7 +1,7 @@
 ---
 title: An exploration of build systems for C++ projects
 slug: an-exploration-of-build-systems-for-cpp-projects
-pubDatetime: 2023-09-26
+pub_date_time: 2023-09-26
 tags: build-systems, nushell, cmake, cpp
 description: Exploring how to build a C++ project using Batch, Powershell, Nushell, Zig and CMake.
 ---

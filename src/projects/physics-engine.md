@@ -2,12 +2,12 @@
 title: 2D C++ Physics Engine
 description: This is a 2D physics engine made in C++ with no libraries. It has a demo project to showcase it made with SFML and a web demo made with Raylib. The project was showcased in 3 code reviews videos by The Cherno that accumulated a total of 318'000 views.
 slug: physics-engine
-pubDatetime: 2022-07-15
-heroImage: /assets/images/physics-engine/physics-engine.png
-heroImageAlt: White circles and squares piling up on a platform in the physics simulation
-teamSize: 1
-timeFrame: 1 Month
-toolsUsed: C++
+pub_date_time: 2022-07-15
+hero_image: /assets/images/physics-engine/physics-engine.png
+hero_image_alt: White circles and squares piling up on a platform in the physics simulation
+team_size: 1
+time_frame: 1 Month
+tools_used: C++
 repo: https://codeberg.org/St0wy/StowyPhysicsEngine
 ---
 

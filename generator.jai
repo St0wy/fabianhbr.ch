@@ -12,6 +12,7 @@ OPEN_TAG :: "<?jai";
 CLOSE_TAG :: "?>";
 BUILD_DIR :: "public/";
 
+// Members are read from the frontmatter key with the same name, except the ones marked @NoFrontmatter
 Post :: struct {
 	title: string;
 	slug: string;
@@ -19,7 +20,7 @@ Post :: struct {
 	tags: [] string;
 	description: string;
 	bluesky_url: string;
-	html: string;
+	html: string; @NoFrontmatter
 }
 
 Project :: struct {
@@ -32,59 +33,38 @@ Project :: struct {
 	team_size: int;
 	time_frame: string;
 	tools_used: string;
-	html: string;
+	html: string; @NoFrontmatter
 	repo: string;
 	itch: string;
 }
 
-posts :: #run -> [] Post {
-	posts_arr: [..] Post;
-	visit_files("src/posts", false, *posts_arr, (info: *File_Visit_Info, posts_arr: *[..] Post) {
-		if info.is_directory then return;
+posts :: #run load_entries(Post, "posts");
+projects :: #run load_entries(Project, "projects");
+
+// Parses every markdown file in src/<folder>, and returns them sorted from newest to oldest
+load_entries :: ($T: Type, folder: string) -> [] T {
+	Visit_Data :: struct {
+		entries: [..] T;
+		folder: string;
+	}
+
+	data := Visit_Data.{folder = folder};
+	visit_files(tprint("src/%", folder), false, *data, (info: *File_Visit_Info, data: *Visit_Data) {
 		ext, ok := path_extension(info.short_name);
-		if !ok then return;
-		if ext != "md" then return;
+		if !ok || ext != "md" then return;
 
 		log("Parsing %", info.short_name);
 		markdown_file_contents := read_entire_file(info.full_name);
 		node := Markdown.parse(markdown_file_contents);
-		html := Markdown.emit_html(node);
-		post := parse_post_frontmatter(node.content);
-		post.html = html;
-		make_directory_if_it_does_not_exist(tprint("%posts/%", BUILD_DIR, post.slug));
-		array_add(posts_arr, post);
+		entry := parse_frontmatter(T, node.content, info.short_name);
+		entry.html = Markdown.emit_html(node);
+		make_directory_if_it_does_not_exist(tprint("%1%2/%3", BUILD_DIR, data.folder, entry.slug));
+		array_add(*data.entries, entry);
 	});
-	sorted := quick_sort(posts_arr, (post_a: Post, post_b: Post) -> int {
-		time_a := calendar_to_apollo(post_a.pub_date_time);
-		time_b := calendar_to_apollo(post_b.pub_date_time);
-		return compare_apollo_times(time_b, time_a);
-	});
-	return sorted;
-}
 
-projects :: #run -> [] Project {
-	projects_arr: [..] Project;
-	visit_files("src/projects", false, *projects_arr, (info: *File_Visit_Info, projects_arr: *[..] Project) {
-		if info.is_directory then return;
-		ext, ok := path_extension(info.short_name);
-		if !ok then return;
-		if ext != "md" then return;
-
-		log("Parsing %", info.short_name);
-		markdown_file_contents := read_entire_file(info.full_name);
-		node := Markdown.parse(markdown_file_contents);
-		html := Markdown.emit_html(node);
-		project := parse_project_frontmatter(node.content);
-		project.html = html;
-		make_directory_if_it_does_not_exist(tprint("%projects/%", BUILD_DIR, project.slug));
-		array_add(projects_arr, project);
+	return quick_sort(data.entries, (a: T, b: T) -> int {
+		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
 	});
-	sorted := quick_sort(projects_arr, (project_a: Project, project_b: Project) -> int {
-		time_a := calendar_to_apollo(project_a.pub_date_time);
-		time_b := calendar_to_apollo(project_b.pub_date_time);
-		return compare_apollo_times(time_b, time_a);
-	});
-	return sorted;
 }
 
 SITE_NAME :: "Fabian Huber";
@@ -115,108 +95,61 @@ escape :: (text: string) -> string {
 	return Markdown.escape_for_html(text);
 }
 
-advance_to_newline :: inline (str: *string) {
-	while str.count > 0 && str.*[0] != "\n" advance(str);
-}
-skip_line :: inline (str: *string) {
-	if str.count == 0 then return;
-	c := str.*[0];
-	advance(str);
-	while str.count > 0 && c != "\n" {
-		c = str.*[0];
-		advance(str);
-	}
-}
-parse_post_frontmatter :: (frontmatter: string) -> Post {
-	post: Post;
-	doc := frontmatter;
-	while doc.count > 0 {
-		key := doc;
-		while !starts_with(doc, ": ") advance(*doc);
-		key.count -= doc.count;
-		advance(*doc, 2);
+// Fills the members of T whose name matches a frontmatter key (e.g. "hero_image: ..." -> hero_image)
+parse_frontmatter :: ($T: Type, frontmatter: string, file_name: string) -> T {
+	result: T;
+	info := type_info(T);
 
-		value := doc;
-		advance_to_newline(*doc);
-		value.count -= doc.count;
+	for line: split(frontmatter, "\n") {
+		if trim(line).count == 0 then continue;
 
-		// There's probably a magic-metaprogram-thing to do to write into the posts, but i'd rather do the easy thing for now
-		if key == {
-			case "title";
-				post.title = value;
-			case "slug";
-				post.slug = value;
-			case "pubDatetime";
-				ct: Calendar_Time;
-				splitted := split(value, "-");
-				post.pub_date_time.year = to_integer(splitted[0]).(s32);
-				post.pub_date_time.month_starting_at_0 = (to_integer(splitted[1]) - 1).(s8);
-				post.pub_date_time.day_of_month_starting_at_0 = (to_integer(splitted[2]) - 1).(s8);
-			case "tags";
-				post.tags = split(value, ", ");
-			case "description";
-				post.description = value;
-			case "blueskyUrl";
-				post.bluesky_url = value;
-			case;
-				log_error("Unknown key in post frontmatter (key: %, value: %)", key, value);
+		found, key, value := split_from_left(line, ": ");
+		if !found {
+			log_error("%: invalid frontmatter line, expected 'key: value' (line: %)", file_name, line);
+			continue;
+		}
+		value = trim(value);
+
+		member := find_frontmatter_member(info, key);
+		if !member {
+			log_error("%: unknown frontmatter key (key: %, value: %)", file_name, key, value);
+			continue;
 		}
 
-		skip_line(*doc);
+		address := (cast(*u8) *result) + member.offset_in_bytes;
+		if member.type == {
+			case type_info(string);
+				(cast(*string) address).* = value;
+			case type_info(int);
+				(cast(*int) address).* = to_integer(value);
+			case type_info([] string);
+				(cast(*[] string) address).* = split(value, ", ");
+			case type_info(Calendar_Time);
+				// Dates are written as YYYY-MM-DD
+				date := split(value, "-");
+				if date.count != 3 {
+					log_error("%: invalid date, expected YYYY-MM-DD (key: %, value: %)", file_name, key, value);
+					continue;
+				}
+				time := cast(*Calendar_Time) address;
+				time.year = to_integer(date[0]).(s32);
+				time.month_starting_at_0 = (to_integer(date[1]) - 1).(s8);
+				time.day_of_month_starting_at_0 = (to_integer(date[2]) - 1).(s8);
+			case;
+				log_error("%: frontmatter key '%' maps to a member of unsupported type %", file_name, key, member.type.type);
+		}
 	}
 
-	return post;
+	return result;
 }
 
-parse_project_frontmatter :: (frontmatter: string) -> Project {
-	project: Project;
-	doc := frontmatter;
-	while doc.count > 0 {
-		key := doc;
-		while !starts_with(doc, ": ") advance(*doc);
-		key.count -= doc.count;
-		advance(*doc, 2);
-
-		value := doc;
-		advance_to_newline(*doc);
-		value.count -= doc.count;
-
-		// There's probably a magic-metaprogram-thing to do to write into the projects, but i'd rather do the easy thing for now
-		if key == {
-			case "title";
-				project.title = value;
-			case "slug";
-				project.slug = value;
-			case "pubDatetime";
-				ct: Calendar_Time;
-				splitted := split(value, "-");
-				project.pub_date_time.year = to_integer(splitted[0]).(s32);
-				project.pub_date_time.month_starting_at_0 = (to_integer(splitted[1]) - 1).(s8);
-				project.pub_date_time.day_of_month_starting_at_0 = (to_integer(splitted[2]) - 1).(s8);
-			case "description";
-				project.description = value;
-			case "heroImage";
-				project.hero_image = value;
-			case "heroImageAlt";
-				project.hero_image_alt = value;
-			case "teamSize";
-				project.team_size = to_integer(value);
-			case "toolsUsed";
-				project.tools_used = value;
-			case "timeFrame";
-				project.time_frame = value;
-			case "itch";
-			    project.itch = value;
-			case "repo";
-			    project.repo = value;
-			case;
-				log_error("Unknown key in project frontmatter (key: %, value: %)", key, value);
-		}
-
-		skip_line(*doc);
+find_frontmatter_member :: (info: *Type_Info_Struct, key: string) -> *Type_Info_Struct_Member {
+	for * member: info.members {
+		if member.name != key continue;
+		for member.notes if it == "NoFrontmatter" return null;
+		return member;
 	}
-
-	return project;
+	return null;
 }
 
 // RSS 2.0 requires dates in the RFC 822 format (e.g. "Sat, 25 Jul 2026 00:00:00 GMT")

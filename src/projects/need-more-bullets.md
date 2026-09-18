@@ -2,12 +2,12 @@
 title: Need More Bullets
 description: Game made during the LvlUp Game Jam 2024 in 48 hours with a team of 3 programmers where it won the public's choice award.
 slug: need-more-bullets
-pubDatetime: 2024-02-18
-heroImage: /assets/images/need-more-bullets/need_more_bullets.png
-heroImageAlt: Need More Bullets title screen over a neon-lit city at sunset
-teamSize: 3
-timeFrame: 48 hours
-toolsUsed: Unity
+pub_date_time: 2024-02-18
+hero_image: /assets/images/need-more-bullets/need_more_bullets.png
+hero_image_alt: Need More Bullets title screen over a neon-lit city at sunset
+team_size: 3
+time_frame: 48 hours
+tools_used: Unity
 itch: https://stowy.itch.io/need-more-bullets
 repo: https://codeberg.org/St0wy/LvlUpGameJam2024
 ---

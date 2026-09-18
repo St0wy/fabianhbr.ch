@@ -1,7 +1,7 @@
 ---
 title: Rollback Netcode in Atomic Ball
 slug: rollback-netcode-in-atomic-ball
-pubDatetime: 2022-10-31
+pub_date_time: 2022-10-31
 tags: netcode, cpp, sae
 description: Technical post on how I used the Rollback engine of my teacher in the game Atomic Ball
 ---

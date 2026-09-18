@@ -2,12 +2,12 @@
 title: Software Rasterizer
 description: Project made to understand better how GPUs work, and get a better feeling of how rasterization works.
 slug: software-rasterizer
-pubDatetime: 2026-01-03
-heroImage: /assets/images/software-raster/output.png
-heroImageAlt: Software-rendered 3D head model on a checkered floor
-teamSize: 1
-timeFrame: 1 month
-toolsUsed: Jai
+pub_date_time: 2026-01-03
+hero_image: /assets/images/software-raster/output.png
+hero_image_alt: Software-rendered 3D head model on a checkered floor
+team_size: 1
+time_frame: 1 month
+tools_used: Jai
 repo: https://codeberg.org/St0wy/tinyrenderer
 ---
 

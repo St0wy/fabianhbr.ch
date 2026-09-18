@@ -2,12 +2,12 @@
 title: Bachelor Thesis - Voxel Path Tracing
 description: Final project of my studies at SAE Institute Geneva. Implemented Voxel Path Tracing in a Vulkan compute shader using the Jai programming language. The thesis document was made in Typst.
 slug: voxel-ray-tracing
-pubDatetime: 2024-07-19
-heroImage: /assets/images/bsc/final.jpg
-heroImageAlt: Path-traced voxel Cornell box with red, green and blue cubes
-teamSize: 1
-timeFrame: 7 Months
-toolsUsed: Jai / Vulkan
+pub_date_time: 2024-07-19
+hero_image: /assets/images/bsc/final.jpg
+hero_image_alt: Path-traced voxel Cornell box with red, green and blue cubes
+team_size: 1
+time_frame: 7 Months
+tools_used: Jai / Vulkan
 repo: https://codeberg.org/St0wy/voxel-ray-tracer
 ---
 

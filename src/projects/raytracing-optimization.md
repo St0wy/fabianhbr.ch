@@ -2,12 +2,12 @@
 title: Optimizations: Ray Tracing in One Weekend
 description: Project where I implemented the Ray Tracing in One Weekend book in Rust and then optimized it. Making it run from 6 minutes to 5 seconds.
 slug: raytracing-optimizations
-pubDatetime: 2023-02-15
-heroImage: /assets/images/raytracing/bigScene.png
-heroImageAlt: Ray-traced scene with many small colorful spheres around large glass, metal and matte spheres
-teamSize: 1
-timeFrame: 1.5 Month
-toolsUsed: Rust
+pub_date_time: 2023-02-15
+hero_image: /assets/images/raytracing/bigScene.png
+hero_image_alt: Ray-traced scene with many small colorful spheres around large glass, metal and matte spheres
+team_size: 1
+time_frame: 1.5 Month
+tools_used: Rust
 repo: https://codeberg.org/St0wy/raytracing
 ---
 

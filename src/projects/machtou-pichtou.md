@@ -2,12 +2,12 @@
 title: Machtou Pichtou Defenders: Slip and Slide
 description: Game made during the Epic Game Jam 2026 over one weekend using a custom C engine developed by a team member.
 slug: machtou-pichtou
-pubDatetime: 2026-07-05
-heroImage: /assets/images/machtou-pichtou/machtou.jpg
-heroImageAlt: A villager sliding down a snowy hill past llamas toward red-plumed knights, with a thatched hut at the top
-teamSize: 3
-timeFrame: 48 hours
-toolsUsed: Custom C Engine
+pub_date_time: 2026-07-05
+hero_image: /assets/images/machtou-pichtou/machtou.jpg
+hero_image_alt: A villager sliding down a snowy hill past llamas toward red-plumed knights, with a thatched hut at the top
+team_size: 3
+time_frame: 48 hours
+tools_used: Custom C Engine
 itch: https://stowy.itch.io/machtou-pichtou-defenders-slip-and-slide
 ---
 

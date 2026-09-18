@@ -1,10 +1,10 @@
 ---
 title: Making my own custom site generator using Jai metaprogramming magic
 slug: custom-site-generator-jai
-pubDatetime: 2026-07-25
+pub_date_time: 2026-07-25
 tags: web, static-site-generator, jai
 description: Why use Jekyll, Hugo, Astro, or Node when you can reinvent the wheel and write a custom templating engine and Markdown parser in Jai?
-blueskyUrl: https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e
+bluesky_url: https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e
 ---
 
 I created my previous portfolio website using [Astro](https://astro.build/), but when it came time to add new stuff to it, 
@@ -59,9 +59,12 @@ Would be converted to :
 
 ```jai
 include("header.jaitml");
-echo("<main>\n<p>Hi.</p>\n</main>\n");
+append(*jaitml_string_builder, "<main>\n<p>Hi.</p>\n</main>\n");
 include("footer.jaitml");
 ```
+
+The HTML is appended directly to the string builder instead of going through `echo`.
+Since `echo` takes a format string, any `%` in my HTML would otherwise be interpreted as a format specifier.
 
 Then to execute this code, I need to get the code string as a constant, meaning that it has to go through another `#run` directive (so this is at compile-compile-time).
 It can then be `#insert`-ed.
@@ -151,7 +154,8 @@ execute_jaitml :: (
 
 One other problem is that any file included through `include` is also not able to read this information.
 This was a problem when setting the title of the page since it had to be set in the header.
-To fix that, I declared a global `title := "";` variable that I change before calling `execute_jaitml`.
+To fix that, I declared a few global variables for the page metadata (the title, the description and the Open Graph data used for link previews),
+that a `set_page_meta` procedure fills before calling `execute_jaitml`.
 This means I could also do that for the post indices, and get rid of the complication with the `$extra_code`,
 but I am not sure of an ideal solution for now, as I'd like to limit global data as much as possible.
 
@@ -165,12 +169,15 @@ To go around that, I used some more metaprogramming magic and generated the code
 #insert -> string {
 	sb: String_Builder;
 	for posts {
-		print_to_builder(*sb, "title = \"% - Fabian Huber\";", it.title);
+		print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\");", it_index);
 		print_to_builder(*sb, "execute_jaitml(\"src/post.html.jaitml\", tprint(\"\%posts/%/index.html\", BUILD_DIR), #code { POST_INDEX :: %; });", it.slug, it_index);
 	}
 	return builder_to_string(*sb);
 };
 ```
+
+Note that the generated code reads the title from the `posts` array instead of pasting it inside a string literal.
+My first version did the latter, which meant that a `"` in a post title would have broken the compilation.
 
 And with that, the template system is complete!
 
@@ -278,34 +285,115 @@ emit_html :: (root: *Ast_Node) -> string {
 ```
 
 I also simplified the frontmatter of my documents to make it easier to parse than YAML.
-Each line has one key-value pair that is separated by `: `.
+Each line has one key-value pair that is separated by `: `, and each key is the name of the struct member it will be stored in:
 
-Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.
+```yaml
+---
+title: 2D C++ Physics Engine
+slug: physics-engine
+pub_date_time: 2022-07-15
+team_size: 1
+---
+```
+
+This means that I can parse the frontmatter of both my posts and my projects with a single procedure.
+Using the type info of the struct, it finds the member with the same name as the key, and writes the value at the offset of this member depending on its type:
 
 ```jai
-posts :: #run -> [] Post {
-	posts_arr: [..] Post;
-	visit_files("src/posts", false, *posts_arr, (info: *File_Visit_Info, posts_arr: *[..] Post) {
-		if info.is_directory then return;
+Post :: struct {
+	title: string;
+	slug: string;
+	pub_date_time: Calendar_Time;
+	tags: [] string;
+	description: string;
+	bluesky_url: string;
+	html: string; @NoFrontmatter
+}
+
+parse_frontmatter :: ($T: Type, frontmatter: string, file_name: string) -> T {
+	result: T;
+	info := type_info(T);
+
+	for line: split(frontmatter, "\n") {
+		if trim(line).count == 0 then continue;
+
+		found, key, value := split_from_left(line, ": ");
+		if !found {
+			log_error("%: invalid frontmatter line, expected 'key: value' (line: %)", file_name, line);
+			continue;
+		}
+		value = trim(value);
+
+		member := find_frontmatter_member(info, key);
+		if !member {
+			log_error("%: unknown frontmatter key (key: %, value: %)", file_name, key, value);
+			continue;
+		}
+
+		address := (cast(*u8) *result) + member.offset_in_bytes;
+		if member.type == {
+			case type_info(string);
+				(cast(*string) address).* = value;
+			case type_info(int);
+				(cast(*int) address).* = to_integer(value);
+			case type_info([] string);
+				(cast(*[] string) address).* = split(value, ", ");
+			case type_info(Calendar_Time);
+				// Parses the YYYY-MM-DD date into the Calendar_Time
+				// ...
+		}
+	}
+
+	return result;
+}
+```
+
+The `html` member is filled with the output of the Markdown parser, so I marked it with a `@NoFrontmatter` note.
+Notes are attached to the type info of the members, which makes it easy to check that a document cannot overwrite it:
+
+```jai
+find_frontmatter_member :: (info: *Type_Info_Struct, key: string) -> *Type_Info_Struct_Member {
+	for * member: info.members {
+		if member.name != key continue;
+		for member.notes if it == "NoFrontmatter" return null;
+		return member;
+	}
+	return null;
+}
+```
+
+Adding a new field to the frontmatter is now just a matter of adding a member to the struct.
+
+Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.
+Since posts and projects are handled the same way, this is also a single polymorphic procedure:
+
+```jai
+posts :: #run load_entries(Post, "posts");
+projects :: #run load_entries(Project, "projects");
+
+load_entries :: ($T: Type, folder: string) -> [] T {
+	Visit_Data :: struct {
+		entries: [..] T;
+		folder: string;
+	}
+
+	data := Visit_Data.{folder = folder};
+	visit_files(tprint("src/%", folder), false, *data, (info: *File_Visit_Info, data: *Visit_Data) {
 		ext, ok := path_extension(info.short_name);
-		if !ok then return;
-		if ext != "md" then return;
+		if !ok || ext != "md" then return;
 
 		log("Parsing %", info.short_name);
 		markdown_file_contents := read_entire_file(info.full_name);
 		node := Markdown.parse(markdown_file_contents);
-		html := Markdown.emit_html(node);
-		post := parse_post_frontmatter(node.content);
-		post.html = html;
-		make_directory_if_it_does_not_exist(tprint("%posts/%", BUILD_DIR, post.slug));
-		array_add(posts_arr, post);
+		entry := parse_frontmatter(T, node.content, info.short_name);
+		entry.html = Markdown.emit_html(node);
+		make_directory_if_it_does_not_exist(tprint("%1%2/%3", BUILD_DIR, data.folder, entry.slug));
+		array_add(*data.entries, entry);
 	});
-	sorted := quick_sort(posts_arr, (post_a: Post, post_b: Post) -> int {
-		time_a := calendar_to_apollo(post_a.pub_date_time);
-		time_b := calendar_to_apollo(post_b.pub_date_time);
-		return compare_apollo_times(time_b, time_a);
+
+	return quick_sort(data.entries, (a: T, b: T) -> int {
+		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
 	});
-	return sorted;
 }
 ```
 
@@ -317,5 +405,7 @@ Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured u
 Most of the time is spent parsing the Markdown, which I'm sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
 I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.
+
+**Update (September 2026):** This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by `set_page_meta`, which also handles the description and the Open Graph tags.
 
 If you're curious, you can read the code of this website on [GitHub](https://github.com/St0wy/fabianhbr.ch).

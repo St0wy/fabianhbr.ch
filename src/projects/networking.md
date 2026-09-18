@@ -2,12 +2,12 @@
 title: Networking - Rollback Atomic Ball
 description: Multiple projects made during the networking module at SAE Institute. As the final project, I added rollback netcode for the game Atomic Ball.
 slug: rollback-atomic-ball
-pubDatetime: 2022-01-03
-heroImage: /assets/images/networking/rollback-atomic-ball.png
-heroImageAlt: Two glowing drop-shaped players on each side of a pink divider, above a row of pink spikes
-teamSize: 1
-timeFrame: 1 Month
-toolsUsed: C++
+pub_date_time: 2022-01-03
+hero_image: /assets/images/networking/rollback-atomic-ball.png
+hero_image_alt: Two glowing drop-shaped players on each side of a pink divider, above a row of pink spikes
+team_size: 1
+time_frame: 1 Month
+tools_used: C++
 repo: https://codeberg.org/St0wy/rollback-atomic-ball
 ---
 

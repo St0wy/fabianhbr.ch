@@ -2,12 +2,12 @@
 title: OpenGL - Deferred PBR Renderer
 description: A deferred PBR renderer made in C++ with OpenGL. Implements Image-Based Lighting, glTF format loading, GPU-compressed textures, Normal Maps, Cascaded Shadow Maps, Bloom and SSAO.
 slug: opengl-renderer
-pubDatetime: 2023-06-18
-heroImage: /assets/images/opengl-scene/chat.jpg
-heroImageAlt: Rendered leather backpack with an axe and a mug, a cat statue and an 8-ball on a mossy rock overlooking hills
-teamSize: 1
-timeFrame: 3 Months
-toolsUsed: C++ / OpenGL
+pub_date_time: 2023-06-18
+hero_image: /assets/images/opengl-scene/chat.jpg
+hero_image_alt: Rendered leather backpack with an axe and a mug, a cat statue and an 8-ball on a mossy rock overlooking hills
+team_size: 1
+time_frame: 3 Months
+tools_used: C++ / OpenGL
 repo: https://github.com/St0wy/opengl-scene
 ---
 
