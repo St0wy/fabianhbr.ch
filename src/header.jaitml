@@ -10,12 +10,12 @@
 		<meta property="og:type" content="<?jai echo("%", escape(og_type)); ?>"/>
 		<meta property="og:url" content="<?jai echo("%", escape(page_url)); ?>"/>
 		<?jai if og_image.count > 0 { ?><meta property="og:image" content="<?jai echo("%", escape(og_image)); ?>"/><?jai if og_image_alt.count > 0 { ?><meta property="og:image:alt" content="<?jai echo("%", escape(og_image_alt)); ?>"/><?jai } ?><?jai } ?>
+		<?jai if is_date_set(og_published_time) { ?><meta property="article:published_time" content="<?jai echo("%", format_date(og_published_time)); ?>"/><?jai } ?>
+		<?jai if is_date_set(og_modified_time) { ?><meta property="article:modified_time" content="<?jai echo("%", format_date(og_modified_time)); ?>"/><?jai } ?>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />
-		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
-	</head>
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>	</head>
 	<body>
 		<header>
 			<nav>

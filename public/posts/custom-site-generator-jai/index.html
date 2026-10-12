@@ -10,12 +10,12 @@
 		<meta property="og:type" content="article"/>
 		<meta property="og:url" content="https://fabianhbr.ch/posts/custom-site-generator-jai/"/>
 		
+		<meta property="article:published_time" content="2026-07-25"/>
+		<meta property="article:modified_time" content="2026-10-12"/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="stylesheet" href="/modern-normalize.css" />
 		<link rel="stylesheet" href="/index.css" />
-		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
-	</head>
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/>	</head>
 	<body>
 		<header>
 			<nav>
@@ -35,7 +35,10 @@
 	<article>
 		<header>
 			<h1>Making my own custom site generator using Jai metaprogramming magic</h1>
-			<p class="date">2026-7-25</p>
+			<p class="date">
+				<time datetime="2026-07-25">2026-07-25</time>
+				&middot; Updated on <time datetime="2026-10-12">2026-10-12</time>
+			</p>
 		</header>
 		<p>I created my previous portfolio website using <a href="https://astro.build/">Astro</a>, but when it came time to add new stuff to it, 
 npm refused to run the build command because after downloading 623 dependencies, it found security risks in some of the packages.
@@ -47,271 +50,294 @@ Except that instead of having my code copy and paste the header/footer by hand, 
 The approach I chose was inspired by the work presented in <a href="https://www.youtube.com/watch?v=OpoxlJ9e3Qg">Tsoding&#39;s livestream</a> where he does exactly that.
 I then pushed the concept further and also added a handmade Markdown parser.</p><p>In this post, I will present how I made this Jai templating system, and then present my Markdown parser.</p><h2>The Jai templating system</h2><p>So what do I mean by that? Well, I wanted something where I could reuse some HTML and put some logic inside of it to, for example, display a list of blog posts.
 My goal was to make something that would specifically work for my needs, and not something hyper robust and generalized.
-I decided to call it <em>Jaitml</em> and it looks like this:</p><pre><code class="language-html">// index.jaitml
-&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;
-&lt;main&gt;
-	&lt;p&gt;Hi! My name is Fabian Huber. I am a Game &amp; Graphics Programmer.&lt;/p&gt;
-	&lt;ul&gt;
-		&lt;?jai for post: posts { ?&gt;
-		&lt;li&gt;&lt;?jai echo(&quot;%&quot;, post.title); ?&gt;&lt;/li&gt;
-		&lt;?jai } ?&gt;
-	&lt;/ul&gt;
-&lt;/main&gt;
-&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</code></pre><p>As you can see, it allows me to write some Jai code inside of HTML to copy the content of other files and basically write any logic I might want when I generate my website.
+I decided to call it <em>Jaitml</em> and it looks like this:</p><pre><code class="hljs language-html">// index.jaitml
+<span class="hljs-meta">&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">main</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Hi! My name is Fabian Huber. I am a Game &amp; Graphics Programmer.<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">ul</span>&gt;</span>
+		<span class="hljs-meta">&lt;?jai for post: posts { ?&gt;</span>
+		<span class="hljs-tag">&lt;<span class="hljs-name">li</span>&gt;</span><span class="hljs-meta">&lt;?jai echo(&quot;%&quot;, post.title); ?&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span>
+		<span class="hljs-meta">&lt;?jai } ?&gt;</span>
+	<span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">main</span>&gt;</span>
+<span class="hljs-meta">&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</span></code></pre><p>As you can see, it allows me to write some Jai code inside of HTML to copy the content of other files and basically write any logic I might want when I generate my website.
 This is done in a <code>generator.jai</code> file that handles this. Since it relies on the compiler to run this code, I decided to do everything at compile-time.
-Something that is easy to do in Jai, using the <code>#run</code> directive where I call <code>set_build_options_dc({do_output = false});</code> to tell the compiler to not create an executable.</p><p>I then have a <code>render_jaitml :: (path: string) -&gt; string</code> procedure that takes my <code>.jaitml</code> file and converts it to Jai code. A simple file like this:</p><pre><code class="language-html">&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;
-&lt;main&gt;
-	&lt;p&gt;Hi.&lt;/p&gt;
-&lt;/main&gt;
-&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</code></pre><p>Would be converted to :</p><pre><code class="language-jai">include(&quot;header.jaitml&quot;);
-append(*jaitml_string_builder, &quot;&lt;main&gt;\n&lt;p&gt;Hi.&lt;/p&gt;\n&lt;/main&gt;\n&quot;);
-include(&quot;footer.jaitml&quot;);</code></pre><p>The HTML is appended directly to the string builder instead of going through <code>echo</code>.
+Something that is easy to do in Jai, using the <code>#run</code> directive where I call <code>set_build_options_dc({do_output = false});</code> to tell the compiler to not create an executable.</p><p>I then have a <code>render_jaitml :: (path: string) -&gt; string</code> procedure that takes my <code>.jaitml</code> file and converts it to Jai code. A simple file like this:</p><pre><code class="hljs language-html"><span class="hljs-meta">&lt;?jai include(&quot;header.jaitml&quot;); ?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">main</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Hi.<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">main</span>&gt;</span>
+<span class="hljs-meta">&lt;?jai include(&quot;footer.jaitml&quot;); ?&gt;</span></code></pre><p>Would be converted to :</p><pre><code class="hljs language-jai"><span class="hljs-title function_">include</span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>header.jaitml<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">append</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">jaitml_string_builder</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>&lt;main&gt;<span class="hljs-char escape_">\n</span>&lt;p&gt;Hi.&lt;/p&gt;<span class="hljs-char escape_">\n</span>&lt;/main&gt;<span class="hljs-char escape_">\n</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-title function_">include</span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>footer.jaitml<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span></code></pre><p>The HTML is appended directly to the string builder instead of going through <code>echo</code>.
 Since <code>echo</code> takes a format string, any <code>%</code> in my HTML would otherwise be interpreted as a format specifier.</p><p>Then to execute this code, I need to get the code string as a constant, meaning that it has to go through another <code>#run</code> directive (so this is at compile-compile-time).
-It can then be <code>#insert</code>-ed.</p><pre><code class="language-jai">code :: #run render_jaitml(path);
-#insert,scope() code;</code></pre><p>The templating system mostly works with two macros: <code>include</code> and <code>echo</code>. These are declared just above the call to <code>render_jaitml</code> like so:</p><pre><code class="language-jai">jaitml_string_builder: String_Builder;
-echo :: (format_string: string, args: ..Any) #expand {
-	print_to_builder(*jaitml_string_builder, format_string, ..args);
-}
-include :: (include_path: string) #expand {
-	sub_file_path_string :: #run -&gt; string {
-		sub_file_path := parse_path(path);
-		sub_file_path.words[sub_file_path.words.count - 1] = include_path;
-		return path_to_string(sub_file_path);
-	}
+It can then be <code>#insert</code>-ed.</p><pre><code class="hljs language-jai"><span class="hljs-variable constant_ declaration__">code</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">render_jaitml</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span>,<span class="hljs-title function_">scope</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-variable">code</span><span class="hljs-punctuation semicolon_">;</span></code></pre><p>The templating system mostly works with two macros: <code>include</code> and <code>echo</code>. These are declared just above the call to <code>render_jaitml</code> like so:</p><pre><code class="hljs language-jai"><span class="hljs-variable declaration_">jaitml_string_builder</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Basic__">String_Builder</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-title function_ declaration__">echo</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-punctuation paren_">(</span><span class="hljs-variable declaration_">format_string</span><span class="hljs-operator define_">:</span> <span class="hljs-type declaration_"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_">args</span><span class="hljs-operator define_">:</span> <span class="hljs-operator range_">..</span><span class="hljs-type"><span class="hljs-type any_">Any</span></span><span class="hljs-punctuation paren_">)</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">expand</span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">print_to_builder</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">jaitml_string_builder</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">format_string</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator range_">..</span><span class="hljs-variable">args</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span>
+<span class="hljs-title function_ declaration__">include</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-punctuation paren_">(</span><span class="hljs-variable declaration_">include_path</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">expand</span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable constant_ declaration__">sub_file_path_string</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__"><span class="hljs-type string_">string</span></span></span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable declaration_">sub_file_path</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ File_Utilities__">parse_path</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable">sub_file_path</span><span class="hljs-property">.words</span><span class="hljs-punctuation bracket_">[</span><span class="hljs-variable">sub_file_path</span><span class="hljs-property">.words</span><span class="hljs-property">.count</span> <span class="hljs-operator math_">-</span> <span class="hljs-number integer_">1</span><span class="hljs-punctuation bracket_">]</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">include_path</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ File_Utilities__">path_to_string</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">sub_file_path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span>
 
-	sub_code :: #run render_jaitml(sub_file_path_string);
-	#insert,scope() sub_code;
-}</code></pre><p>At the end, <code>jaitml_string_builder</code> contains the final HTML code and is written to an output file.
+	<span class="hljs-variable constant_ declaration__">sub_code</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">render_jaitml</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">sub_file_path_string</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span>,<span class="hljs-title function_">scope</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-variable">sub_code</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>At the end, <code>jaitml_string_builder</code> contains the final HTML code and is written to an output file.
 Now, to read the posts, I simply declared a global constant <code>posts</code> variable that is filled up in a <code>#run</code> block (more on this later).</p><p>To generate one page per post, it was a bit more tricky.
 First, when generating the page, I needed to know which post to generate it for.
-This required me to add a <code>$extra_code: Code</code> block parameter to my macro where I could pass the post index like that:</p><pre><code class="language-jai">execute_jaitml(&quot;src/post.html.jaitml&quot;, tprint(&quot;%posts/slug/index.html&quot;, BUILD_DIR), #code { POST_INDEX :: index; });</code></pre><p>However, to make this work, I had to put the code that calls <code>render_jaitml</code> in a <code>#code</code> block too,
+This required me to add a <code>$extra_code: Code</code> block parameter to my macro where I could pass the post index like that:</p><pre><code class="hljs language-jai"><span class="hljs-title function_">execute_jaitml</span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>src/post.html.jaitml<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">tprint</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-subst">%</span>posts/slug/index.html<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable constant_">BUILD_DIR</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">code</span></span> <span class="hljs-punctuation brace_">{</span> <span class="hljs-variable constant_ declaration__">POST_INDEX</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-variable">index</span><span class="hljs-punctuation semicolon_">;</span> <span class="hljs-punctuation brace_">}</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span></code></pre><p>However, to make this work, I had to put the code that calls <code>render_jaitml</code> in a <code>#code</code> block too,
 merge them into one, and insert that because it is not possible to access the variables from one block in another.
-My final <code>execute_jaitml</code> procedure looks like this:</p><pre><code class="language-jai">execute_jaitml :: (
-	$path: string, 
-	output_path: string, 
-	$extra_code: Code = #code {}
-) #expand {
-	jaitml_string_builder: String_Builder;
-	echo :: (format_string: string, args: ..Any) #expand {
-		print_to_builder(*jaitml_string_builder, format_string, ..args);
-	}
-	include :: (include_path: string) #expand {
-		sub_file_path_string :: #run -&gt; string {
-			sub_file_path := parse_path(path);
-			sub_file_path.words[sub_file_path.words.count - 1] = include_path;
-			return path_to_string(sub_file_path);
-		}
+My final <code>execute_jaitml</code> procedure looks like this:</p><pre><code class="hljs language-jai"><span class="hljs-title function_ declaration__">execute_jaitml</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-punctuation paren_">(</span>
+	<span class="hljs-operator bake_">$</span><span class="hljs-variable param_ baked__">path</span><span class="hljs-operator define_">:</span> <span class="hljs-type declaration_"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation comma_">,</span> 
+	<span class="hljs-variable declaration_">output_path</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation comma_">,</span> 
+	<span class="hljs-operator bake_">$</span><span class="hljs-variable param_ baked__">extra_code</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type code_">Code</span></span> <span class="hljs-operator assign_">=</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">code</span></span> <span class="hljs-punctuation brace_">{</span><span class="hljs-punctuation brace_">}</span>
+<span class="hljs-punctuation paren_">)</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">expand</span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable declaration_">jaitml_string_builder</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Basic__">String_Builder</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-title function_ declaration__">echo</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-punctuation paren_">(</span><span class="hljs-variable declaration_">format_string</span><span class="hljs-operator define_">:</span> <span class="hljs-type declaration_"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_">args</span><span class="hljs-operator define_">:</span> <span class="hljs-operator range_">..</span><span class="hljs-type"><span class="hljs-type any_">Any</span></span><span class="hljs-punctuation paren_">)</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">expand</span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">print_to_builder</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">jaitml_string_builder</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">format_string</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator range_">..</span><span class="hljs-variable">args</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span>
+	<span class="hljs-title function_ declaration__">include</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-punctuation paren_">(</span><span class="hljs-variable declaration_">include_path</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">expand</span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable constant_ declaration__">sub_file_path_string</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__"><span class="hljs-type string_">string</span></span></span></span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable declaration_">sub_file_path</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ File_Utilities__">parse_path</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable">sub_file_path</span><span class="hljs-property">.words</span><span class="hljs-punctuation bracket_">[</span><span class="hljs-variable">sub_file_path</span><span class="hljs-property">.words</span><span class="hljs-property">.count</span> <span class="hljs-operator math_">-</span> <span class="hljs-number integer_">1</span><span class="hljs-punctuation bracket_">]</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">include_path</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ File_Utilities__">path_to_string</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">sub_file_path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span>
 
-		sub_code :: #run render_jaitml(sub_file_path_string);
-		#insert,scope() sub_code;
-	}
+		<span class="hljs-variable constant_ declaration__">sub_code</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">render_jaitml</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">sub_file_path_string</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span>,<span class="hljs-title function_">scope</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-variable">sub_code</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span>
 
-	#insert,scope() -&gt; Code {
-		statements_to_insert: [..] *Code_Node;
-		extra_code_nodes := compiler_get_nodes(extra_code);
-		if extra_code_nodes.kind == .BLOCK {
-			block := extra_code_nodes.(*Code_Block);
-			array_add(*statements_to_insert, ..block.statements);
-		}
+	<span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span>,<span class="hljs-title function_">scope</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__"><span class="hljs-type code_">Code</span></span></span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable declaration_">statements_to_insert</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type arrayOf_"><span class="hljs-punctuation bracket_">[</span><span class="hljs-operator dynamicArray_">..</span><span class="hljs-punctuation bracket_">]</span></span> <span class="hljs-operator pointerTo_">*</span><span class="hljs-type stdLib_ Compiler__">Code_Node</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable declaration_">extra_code_nodes</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Compiler__">compiler_get_nodes</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">extra_code</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">extra_code_nodes</span><span class="hljs-property">.kind</span> <span class="hljs-operator comparison_">==</span> <span class="hljs-property constant_ enum__">.BLOCK</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable declaration_">block</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-variable">extra_code_nodes</span><span class="hljs-operator cast_ v3__">.<span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type stdLib_ Compiler__">Code_Block</span></span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">array_add</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">statements_to_insert</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator range_">..</span><span class="hljs-variable">block</span><span class="hljs-property">.statements</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span>
 
-		file_code_nodes := compiler_get_nodes(#code {
-			code :: #run render_jaitml(path);
-			#insert,scope() code;
-			write_entire_file(output_path, *jaitml_string_builder);
-		});
+		<span class="hljs-variable declaration_">file_code_nodes</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Compiler__">compiler_get_nodes</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">code</span></span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable constant_ declaration__">code</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">render_jaitml</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">path</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span>,<span class="hljs-title function_">scope</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-variable">code</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-title function_"><span class="hljs-built_in stdLib_ File__">write_entire_file</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">output_path</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator math_">*</span><span class="hljs-variable">jaitml_string_builder</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
 
-		array_add(*statements_to_insert, file_code_nodes);
-		block_to_insert := New(Code_Block);
-		block_to_insert.block_type = .IMPERATIVE;
-		block_to_insert.statements = statements_to_insert;
-		return compiler_get_code(block_to_insert);
-	}
-}</code></pre><p>One other problem is that any file included through <code>include</code> is also not able to read this information.
+		<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">array_add</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">statements_to_insert</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">file_code_nodes</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable declaration_">block_to_insert</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">New</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-type stdLib_ Compiler__">Code_Block</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable">block_to_insert</span><span class="hljs-property">.block_type</span> <span class="hljs-operator assign_">=</span> <span class="hljs-property constant_ enum__">.IMPERATIVE</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable">block_to_insert</span><span class="hljs-property">.statements</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">statements_to_insert</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Compiler__">compiler_get_code</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">block_to_insert</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>One other problem is that any file included through <code>include</code> is also not able to read this information.
 This was a problem when setting the title of the page since it had to be set in the header.
 To fix that, I declared a few global variables for the page metadata (the title, the description and the Open Graph data used for link previews),
 that a <code>set_page_meta</code> procedure fills before calling <code>execute_jaitml</code>.
 This means I could also do that for the post indices, and get rid of the complication with the <code>$extra_code</code>,
 but I am not sure of an ideal solution for now, as I&#39;d like to limit global data as much as possible.</p><p>Then, another problem appeared when it was time to iterate over the <code>posts</code> array and generate the pages.
 This is because <code>execute_jaitml</code> needs to be executed with the <code>#run</code>, so all the parameters must be constants.
-The problem is that when you iterate over a constant array, the iterator is not itself constant.</p><p>To go around that, I used some more metaprogramming magic and generated the code that would result from an unrolled loop:</p><pre><code class="language-jai">#insert -&gt; string {
-	sb: String_Builder;
-	for posts {
-		print_to_builder(*sb, &quot;set_page_meta(posts[%1].title, tprint(\&quot;/posts/\%/\&quot;, posts[%1].slug), posts[%1].description, \&quot;article\&quot;);&quot;, it_index);
-		print_to_builder(*sb, &quot;execute_jaitml(\&quot;src/post.html.jaitml\&quot;, tprint(\&quot;\%posts/%/index.html\&quot;, BUILD_DIR), #code { POST_INDEX :: %; });&quot;, it.slug, it_index);
-	}
-	return builder_to_string(*sb);
-};</code></pre><p>Note that the generated code reads the title from the <code>posts</code> array instead of pasting it inside a string literal.
+The problem is that when you iterate over a constant array, the iterator is not itself constant.</p><p>To go around that, I used some more metaprogramming magic and generated the code that would result from an unrolled loop:</p><pre><code class="hljs language-jai"><span class="hljs-meta directive_ insert__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ insert__">insert</span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-type string_">string</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable declaration_">sb</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Basic__">String_Builder</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable"><span class="hljs-keyword for_">for</span></span> <span class="hljs-variable">posts</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">print_to_builder</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>set_page_meta(posts[<span class="hljs-subst">%1</span>].title, tprint(<span class="hljs-char escape_">\&quot;</span>/posts/<span class="hljs-char escape_">\%</span>/<span class="hljs-char escape_">\&quot;</span>, posts[<span class="hljs-subst">%1</span>].slug), posts[<span class="hljs-subst">%1</span>].description, <span class="hljs-char escape_">\&quot;</span>article<span class="hljs-char escape_">\&quot;</span>);<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable"><span class="hljs-variable language_">it_index</span></span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">print_to_builder</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>execute_jaitml(<span class="hljs-char escape_">\&quot;</span>src/post.html.jaitml<span class="hljs-char escape_">\&quot;</span>, tprint(<span class="hljs-char escape_">\&quot;</span><span class="hljs-char escape_">\%</span>posts/<span class="hljs-subst">%</span>/index.html<span class="hljs-char escape_">\&quot;</span>, BUILD_DIR), #code { POST_INDEX :: <span class="hljs-subst">%</span>; });<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span><span class="hljs-property">.slug</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable"><span class="hljs-variable language_">it_index</span></span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span></span>
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">builder_to_string</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></span></span><span class="hljs-punctuation semicolon_">;</span></code></pre><p>Note that the generated code reads the title from the <code>posts</code> array instead of pasting it inside a string literal.
 My first version did the latter, which meant that a <code>&quot;</code> in a post title would have broken the compilation.</p><p>And with that, the template system is complete!</p><h2>Markdown parsing</h2><p>Now to parse Markdown, I needed a way to first get an abstract syntax tree (AST) that would then be used to generate an HTML output.
 Each node stores pointers to other nodes to be able to make the tree and some data that is stored in a <a href="https://en.wikipedia.org/wiki/Tagged_union">discriminated union</a>.
-There are two kinds of node types, block types (headings, paragraphs, etc.) and inline types (text, strong, etc.).</p><pre><code class="language-jai">Node_Kind :: enum u8 {
-	Document;
-	// Blocks
-	Heading;
-	Paragraph;
-	// Inline
-	Text;
-	Strong;
-	// ...
-}
+There are two kinds of node types, block types (headings, paragraphs, etc.) and inline types (text, strong, etc.).</p><pre><code class="hljs language-jai"><span class="hljs-title enum_ declaration__">Node_Kind</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type enum_ declaration__"><span class="hljs-keyword enum_">enum</span> <span class="hljs-type integer_ unsigned__">u8</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-type">Document</span>;
+	<span class="hljs-comment line_">// Blocks</span>
+	<span class="hljs-type">Heading</span>;
+	<span class="hljs-type">Paragraph</span>;
+	<span class="hljs-comment line_">// Inline</span>
+	<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">Text</span></span>;
+	<span class="hljs-type">Strong</span>;
+	<span class="hljs-comment line_">// ...</span>
+<span class="hljs-punctuation brace_">}</span></span></span>
 
-Node_Data :: union kind: Node_Kind {
-	level: u8;
-	content: string;
-}
+<span class="hljs-title class_ declaration__">Node_Data</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type union_ declaration__"><span class="hljs-keyword union_">union</span> <span class="hljs-property tag_"><span class="hljs-property tag_ declaration__">kind</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_ tag__">Node_Kind </span></span><span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">level</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type integer_ unsigned__">u8</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">content</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></span></span>
 
-Ast_Node :: struct {
-	parent: *Ast_Node;
-	first_child: *Ast_Node;
-	last_child: *Ast_Node;
-	next_sibling: *Ast_Node;
-	using data: Node_Data;
-}</code></pre><p>There isn&#39;t a lot in <code>Node_Data</code> because more is not needed. Just <code>level</code> is used for headings, then content for everything else.
+<span class="hljs-title class_ declaration__">Ast_Node</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type struct_ declaration__"><span class="hljs-keyword struct_">struct</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">parent</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-operator pointerTo_">*</span>Ast_Node</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">first_child</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-operator pointerTo_">*</span>Ast_Node</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">last_child</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-operator pointerTo_">*</span>Ast_Node</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">next_sibling</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-operator pointerTo_">*</span>Ast_Node</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-keyword meta_">using</span> <span class="hljs-property"><span class="hljs-property declaration_">data</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_">Node_Data</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></span></span></code></pre><p>There isn&#39;t a lot in <code>Node_Data</code> because more is not needed. Just <code>level</code> is used for headings, then content for everything else.
 For example, images have an Image node that stores the url in content, then a child Text node that stores the alt.
 For the document kind, content stores the frontmatter, and it&#39;s the responsibility of the code using the library to parse this.</p><p>Since this program only runs shortly and terminates, I never manually free any memory and let the OS take care of that.
 However, I still want allocations to be fast.
 Since I will be allocating a lot of small nodes, I decided to use the <a href="https://www.dgtlgrove.com/p/untangling-lifetimes-the-arena-allocator">arena allocator</a> provided by Jai called <code>Flat_Pool</code>.
 It works by using the virtual address space of the machine.
 It reserves a big chunk of memory (256MB by default) in the address space that gets committed each time the currently committed memory runs out.
-The node allocation code looks like this:</p><pre><code class="language-jai">#import &quot;Flat_Pool&quot;;
-pool: Flat_Pool;
-a: Allocator;
-// a is set in another procedure
-// a.proc = flat_pool_allocator_proc;
-// a.data = *pool;
+The node allocation code looks like this:</p><pre><code class="hljs language-jai"><span class="hljs-meta directive_ import__"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_ import__">import</span> <span class="hljs-string path_ import__"><span class="hljs-punctuation quote_">&quot;</span>Flat_Pool<span class="hljs-punctuation quote_">&quot;</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-variable declaration_">pool</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Flat_Pool__">Flat_Pool</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-variable declaration_">a</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Preload__">Allocator</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-comment line_">// a is set in another procedure</span>
+<span class="hljs-comment line_">// a.proc = flat_pool_allocator_proc;</span>
+<span class="hljs-comment line_">// a.data = *pool;</span>
 
-make_node :: (kind: Node_Kind, parent: *Ast_Node = null) -&gt; *Ast_Node {
-	node := New(Ast_Node,, a);
-	node.kind = kind;
-	if parent then add_child(parent, node);
-	return node;
-}</code></pre><p>The parsing is done in two phases:</p><ol><li><strong>Block parsing</strong>: Iterates over the Markdown document to extract the block nodes.</li><li><strong>Inline parsing</strong>: Iterates over text nodes and breaks them up to add things like images, bold text, etc.</li></ol><p>Parsing is done using an ad-hoc line parser, so the code is not the prettiest,
+<span class="hljs-title function_ declaration__">make_node</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-params declaration_">kind</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_">Node_Kind</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">parent</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-operator pointerTo_">*</span>Ast_Node <span class="hljs-operator assign_">=</span><span class="hljs-params default_"> <span class="hljs-variable"><span class="hljs-literal">null</span></span></span></span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-operator pointerTo_">*</span><span class="hljs-params return_"><span class="hljs-params return_ declaration__">Ast_Node</span></span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable declaration_">node</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">New</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-type">Ast_Node</span><span class="hljs-punctuation commaComma_">,,</span> <span class="hljs-variable">a</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable">node</span><span class="hljs-property">.kind</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">kind</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">parent</span> <span class="hljs-variable"><span class="hljs-keyword if_">then</span></span> <span class="hljs-title function_">add_child</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">parent</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">node</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-variable">node</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>The parsing is done in two phases:</p><ol><li><strong>Block parsing</strong>: Iterates over the Markdown document to extract the block nodes.</li><li><strong>Inline parsing</strong>: Iterates over text nodes and breaks them up to add things like images, bold text, etc.</li></ol><p>Parsing is done using an ad-hoc line parser, so the code is not the prettiest,
 but most importantly it is not <a href="https://commonmark.org/">CommonMark</a> compliant.
 My goal was to only implement the strict minimum to make my current Markdown documents work.
 The only thing I had to change was the frontmatter and tables, which I transformed into HTML ones.
-If I ever need more in the future, I can still add it later.</p><p>To emit HTML, I iterate over the tree in a depth-first manner using a stackless tree traversal and print the tags in a <code>String_Builder</code>.</p><pre><code class="language-jai">emit_html :: (root: *Ast_Node) -&gt; string {
-	if !root return &quot;&quot;;
-	sb: String_Builder;
+If I ever need more in the future, I can still add it later.</p><p>To emit HTML, I iterate over the tree in a depth-first manner using a stackless tree traversal and print the tags in a <code>String_Builder</code>.</p><pre><code class="hljs language-jai"><span class="hljs-title function_ declaration__">emit_html</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-params declaration_">root</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-operator pointerTo_">*</span>Ast_Node</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__"><span class="hljs-type string_">string</span></span></span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-operator logical_">!</span><span class="hljs-variable">root</span> <span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable declaration_">sb</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Basic__">String_Builder</span></span><span class="hljs-punctuation semicolon_">;</span>
 
-	current := root;
-	going_down := true;
+	<span class="hljs-variable declaration_">current</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-variable">root</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable declaration_">going_down</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-variable"><span class="hljs-literal bool_ true__">true</span></span><span class="hljs-punctuation semicolon_">;</span>
 
-	while current {
-		if going_down {
-			print_open_tag(*sb, current);
-			if current.first_child {
-				current = current.first_child;
-				continue;
-			}
-		}
+	<span class="hljs-variable"><span class="hljs-keyword for_">while</span></span> <span class="hljs-variable">current</span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">going_down</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-title function_">print_open_tag</span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">current</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">current</span><span class="hljs-property">.first_child</span> <span class="hljs-punctuation brace_">{</span>
+				<span class="hljs-variable">current</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">current</span><span class="hljs-property">.first_child</span><span class="hljs-punctuation semicolon_">;</span>
+				<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">continue</span></span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-punctuation brace_">}</span>
+		<span class="hljs-punctuation brace_">}</span>
 
-		print_close_tag(*sb, current);
-		if current.next_sibling {
-			current = current.next_sibling;
-			going_down = true;
-		} else {
-			current = current.parent;
-			going_down = false;
-		}
-	}
+		<span class="hljs-title function_">print_close_tag</span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">current</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">current</span><span class="hljs-property">.next_sibling</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable">current</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">current</span><span class="hljs-property">.next_sibling</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable">going_down</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable"><span class="hljs-literal bool_ true__">true</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span> <span class="hljs-variable"><span class="hljs-keyword if_">else</span></span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable">current</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">current</span><span class="hljs-property">.parent</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable">going_down</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable"><span class="hljs-literal bool_ false__">false</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span>
+	<span class="hljs-punctuation brace_">}</span>
 
-	return builder_to_string(*sb);
-}</code></pre><p>I also simplified the frontmatter of my documents to make it easier to parse than YAML.
-Each line has one key-value pair that is separated by <code>: </code>, and each key is the name of the struct member it will be stored in:</p><pre><code class="language-yaml">---
-title: 2D C++ Physics Engine
-slug: physics-engine
-pub_date_time: 2022-07-15
-team_size: 1
----</code></pre><p>This means that I can parse the frontmatter of both my posts and my projects with a single procedure.
-Using the type info of the struct, it finds the member with the same name as the key, and writes the value at the offset of this member depending on its type:</p><pre><code class="language-jai">Post :: struct {
-	title: string;
-	slug: string;
-	pub_date_time: Calendar_Time;
-	tags: [] string;
-	description: string;
-	bluesky_url: string;
-	html: string; @NoFrontmatter
-}
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">builder_to_string</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">sb</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>I also simplified the frontmatter of my documents to make it easier to parse than YAML.
+Each line has one key-value pair that is separated by <code>: </code>, and each key is the name of the struct member it will be stored in:</p><pre><code class="hljs language-yaml"><span class="hljs-meta">---</span>
+<span class="hljs-attr">title:</span> <span class="hljs-string">2D</span> <span class="hljs-string">C++</span> <span class="hljs-string">Physics</span> <span class="hljs-string">Engine</span>
+<span class="hljs-attr">slug:</span> <span class="hljs-string">physics-engine</span>
+<span class="hljs-attr">pub_date_time:</span> <span class="hljs-number">2022-07-15</span>
+<span class="hljs-attr">team_size:</span> <span class="hljs-number">1</span>
+<span class="hljs-meta">---</span></code></pre><p>This means that I can parse the frontmatter of both my posts and my projects with a single procedure.
+Using the type info of the struct, it finds the member with the same name as the key, and writes the value at the offset of this member depending on its type:</p><pre><code class="hljs language-jai"><span class="hljs-title class_ declaration__">Post</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type struct_ declaration__"><span class="hljs-keyword struct_">struct</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">title</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">slug</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">pub_date_time</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type stdLib_ Basic__">Calendar_Time</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">tags</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type arrayOf_"><span class="hljs-punctuation bracket_">[</span><span class="hljs-punctuation bracket_">]</span></span> <span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">description</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">bluesky_url</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-property"><span class="hljs-property declaration_">html</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span> <span class="hljs-meta note_">@NoFrontmatter</span>
+<span class="hljs-punctuation brace_">}</span></span></span>
 
-parse_frontmatter :: ($T: Type, frontmatter: string, file_name: string) -&gt; T {
-	result: T;
-	info := type_info(T);
+<span class="hljs-title function_ declaration__">parse_frontmatter</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-operator bake_">$</span><span class="hljs-params declaration_">T</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type type_">Type</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">frontmatter</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">file_name</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__">T</span></span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable declaration_">result</span><span class="hljs-operator define_">:</span> <span class="hljs-type">T</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-variable declaration_">info</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-keyword meta_">type_info</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable constant_">T</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
 
-	for line: split(frontmatter, &quot;\n&quot;) {
-		if trim(line).count == 0 then continue;
+	<span class="hljs-keyword for_"><span class="hljs-keyword for_">for</span> <span class="hljs-variable declaration_">line</span><span class="hljs-operator define_">:</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">split</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">frontmatter</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-char escape_">\n</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span> </span><span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">trim</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">line</span><span class="hljs-punctuation paren_">)</span><span class="hljs-operator dot_">.</span><span class="hljs-variable"><span class="hljs-variable stdLib_ Bindings_Generator__">count</span></span> <span class="hljs-operator comparison_">==</span> <span class="hljs-number integer_">0</span> <span class="hljs-variable"><span class="hljs-keyword if_">then</span></span> <span class="hljs-variable"><span class="hljs-keyword flowCtrl_">continue</span></span><span class="hljs-punctuation semicolon_">;</span>
 
-		found, key, value := split_from_left(line, &quot;: &quot;);
-		if !found {
-			log_error(&quot;%: invalid frontmatter line, expected &#39;key: value&#39; (line: %)&quot;, file_name, line);
-			continue;
-		}
-		value = trim(value);
+		<span class="hljs-variable declaration_">found</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_">key</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_">value</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">split_from_left</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">line</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>: <span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-operator logical_">!</span><span class="hljs-variable">found</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">log_error</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-subst">%</span>: invalid frontmatter line, expected &#x27;key: value&#x27; (line: <span class="hljs-subst">%</span>)<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">file_name</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">line</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">continue</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span>
+		<span class="hljs-variable">value</span> <span class="hljs-operator assign_">=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">trim</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">value</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
 
-		member := find_frontmatter_member(info, key);
-		if !member {
-			log_error(&quot;%: unknown frontmatter key (key: %, value: %)&quot;, file_name, key, value);
-			continue;
-		}
+		<span class="hljs-variable declaration_">member</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_">find_frontmatter_member</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">info</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">key</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-operator logical_">!</span><span class="hljs-variable">member</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">log_error</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-subst">%</span>: unknown frontmatter key (key: <span class="hljs-subst">%</span>, value: <span class="hljs-subst">%</span>)<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">file_name</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">key</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">value</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">continue</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-punctuation brace_">}</span>
 
-		address := (cast(*u8) *result) + member.offset_in_bytes;
-		if member.type == {
-			case type_info(string);
-				(cast(*string) address).* = value;
-			case type_info(int);
-				(cast(*int) address).* = to_integer(value);
-			case type_info([] string);
-				(cast(*[] string) address).* = split(value, &quot;, &quot;);
-			case type_info(Calendar_Time);
-				// Parses the YYYY-MM-DD date into the Calendar_Time
-				// ...
-		}
-	}
+		<span class="hljs-variable declaration_">address</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-punctuation paren_">(</span><span class="hljs-keyword cast_ v1__"><span class="hljs-title function_"><span class="hljs-keyword cast_">cast</span></span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type integer_ unsigned__">u8</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator math_">*</span><span class="hljs-variable">result</span><span class="hljs-punctuation paren_">)</span> <span class="hljs-operator math_">+</span> <span class="hljs-variable">member</span><span class="hljs-property">.offset_in_bytes</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">member</span><span class="hljs-property">.type</span> <span class="hljs-operator comparison_">==</span> <span class="hljs-punctuation brace_">{</span>
+			<span class="hljs-variable"><span class="hljs-keyword if_">case</span></span> <span class="hljs-title function_"><span class="hljs-keyword meta_">type_info</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+				<span class="hljs-punctuation paren_">(</span><span class="hljs-keyword cast_ v1__"><span class="hljs-title function_"><span class="hljs-keyword cast_">cast</span></span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-variable">address</span><span class="hljs-punctuation paren_">)</span><span class="hljs-operator dereference_">.*</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">value</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword if_">case</span></span> <span class="hljs-title function_"><span class="hljs-keyword meta_">type_info</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-type integer_ signed__">int</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+				<span class="hljs-punctuation paren_">(</span><span class="hljs-keyword cast_ v1__"><span class="hljs-title function_"><span class="hljs-keyword cast_">cast</span></span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type integer_ signed__">int</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-variable">address</span><span class="hljs-punctuation paren_">)</span><span class="hljs-operator dereference_">.*</span> <span class="hljs-operator assign_">=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">to_integer</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">value</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword if_">case</span></span> <span class="hljs-title function_"><span class="hljs-keyword meta_">type_info</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-punctuation bracket_">[</span><span class="hljs-punctuation bracket_">]</span> <span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+				<span class="hljs-punctuation paren_">(</span><span class="hljs-keyword cast_ v1__"><span class="hljs-title function_"><span class="hljs-keyword cast_">cast</span></span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-punctuation bracket_">[</span><span class="hljs-punctuation bracket_">]</span> <span class="hljs-type"><span class="hljs-type string_">string</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-variable">address</span><span class="hljs-punctuation paren_">)</span><span class="hljs-operator dereference_">.*</span> <span class="hljs-operator assign_">=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">split</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">value</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>, <span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+			<span class="hljs-variable"><span class="hljs-keyword if_">case</span></span> <span class="hljs-title function_"><span class="hljs-keyword meta_">type_info</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-type"><span class="hljs-type stdLib_ Basic__">Calendar_Time</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+				<span class="hljs-comment line_">// Parses the YYYY-MM-DD date into the Calendar_Time</span>
+				<span class="hljs-comment line_">// ...</span>
+		<span class="hljs-punctuation brace_">}</span>
+	<span class="hljs-punctuation brace_">}</span>
 
-	return result;
-}</code></pre><p>The <code>html</code> member is filled with the output of the Markdown parser, so I marked it with a <code>@NoFrontmatter</code> note.
-Notes are attached to the type info of the members, which makes it easy to check that a document cannot overwrite it:</p><pre><code class="language-jai">find_frontmatter_member :: (info: *Type_Info_Struct, key: string) -&gt; *Type_Info_Struct_Member {
-	for * member: info.members {
-		if member.name != key continue;
-		for member.notes if it == &quot;NoFrontmatter&quot; return null;
-		return member;
-	}
-	return null;
-}</code></pre><p>Adding a new field to the frontmatter is now just a matter of adding a member to the struct.</p><p>Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.
-Since posts and projects are handled the same way, this is also a single polymorphic procedure:</p><pre><code class="language-jai">posts :: #run load_entries(Post, &quot;posts&quot;);
-projects :: #run load_entries(Project, &quot;projects&quot;);
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-variable">result</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>The <code>html</code> member is filled with the output of the Markdown parser, so I marked it with a <code>@NoFrontmatter</code> note.
+Notes are attached to the type info of the members, which makes it easy to check that a document cannot overwrite it:</p><pre><code class="hljs language-jai"><span class="hljs-title function_ declaration__">find_frontmatter_member</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-params declaration_">info</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type stdLib_ Preload__">Type_Info_Struct</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">key</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-operator pointerTo_">*</span><span class="hljs-params return_"><span class="hljs-params return_ declaration__">Type_Info_Struct_Member</span></span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-keyword for_"><span class="hljs-keyword for_">for</span> <span class="hljs-punctuation forModifier_">*</span> <span class="hljs-variable declaration_">member</span><span class="hljs-operator define_">:</span> <span class="hljs-variable">info</span><span class="hljs-property">.members</span> </span><span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable">member</span><span class="hljs-property">.name</span> <span class="hljs-operator comparison_">!=</span> <span class="hljs-variable">key</span> <span class="hljs-variable"><span class="hljs-keyword flowCtrl_">continue</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-keyword for_"><span class="hljs-keyword for_">for</span> <span class="hljs-variable">member</span><span class="hljs-property">.notes</span> <span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span> <span class="hljs-operator comparison_">==</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>NoFrontmatter<span class="hljs-punctuation quote_">&quot;</span></span> <span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-variable"><span class="hljs-literal">null</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-variable">member</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span>
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-variable"><span class="hljs-literal">null</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><p>Adding a new field to the frontmatter is now just a matter of adding a member to the struct.</p><p>Finally, I can create the posts array by getting every file in a folder, parsing them, and then sorting the array to have them chronologically ordered.
+Since posts and projects are handled the same way, this is also a single polymorphic procedure:</p><pre><code class="hljs language-jai"><span class="hljs-variable constant_ declaration__">posts</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">load_entries</span><span class="hljs-punctuation paren_">(</span><span class="hljs-type">Post</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>posts<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-variable constant_ declaration__">projects</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-meta"><span class="hljs-operator hash_ directive__">#</span><span class="hljs-meta directive_">run</span></span> <span class="hljs-title function_">load_entries</span><span class="hljs-punctuation paren_">(</span><span class="hljs-type">Project</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>projects<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
 
-load_entries :: ($T: Type, folder: string) -&gt; [] T {
-	Visit_Data :: struct {
-		entries: [..] T;
-		folder: string;
-	}
+<span class="hljs-title function_ declaration__">load_entries</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-operator bake_">$</span><span class="hljs-params declaration_">T</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type type_">Type</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">folder</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_">[] <span class="hljs-params return_"><span class="hljs-params return_ declaration__">T</span></span></span> <span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-title class_ declaration__">Visit_Data</span> <span class="hljs-operator define_ constant__">::</span> <span class="hljs-type struct_ declaration__"><span class="hljs-keyword struct_">struct</span> <span class="hljs-_BalancedBraces"><span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-property"><span class="hljs-property declaration_">entries</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type arrayOf_"><span class="hljs-punctuation bracket_">[</span><span class="hljs-operator dynamicArray_">..</span><span class="hljs-punctuation bracket_">]</span></span> T</span></span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-property"><span class="hljs-property declaration_">documents</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type arrayOf_"><span class="hljs-punctuation bracket_">[</span><span class="hljs-operator dynamicArray_">..</span><span class="hljs-punctuation bracket_">]</span></span> <span class="hljs-operator pointerTo_">*</span>Markdown.Ast_Node</span></span><span class="hljs-punctuation semicolon_">;</span> <span class="hljs-comment line_">// documents[i] is the parsed markdown of entries[i]</span>
+		<span class="hljs-property"><span class="hljs-property declaration_">folder</span><span class="hljs-operator define_">:</span> <span class="hljs-type property_"><span class="hljs-type string_">string</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span></span></span>
 
-	data := Visit_Data.{folder = folder};
-	visit_files(tprint(&quot;src/%&quot;, folder), false, *data, (info: *File_Visit_Info, data: *Visit_Data) {
-		ext, ok := path_extension(info.short_name);
-		if !ok || ext != &quot;md&quot; then return;
+	<span class="hljs-variable declaration_">data</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-type">Visit_Data</span><span class="hljs-operator dot_">.</span><span class="hljs-punctuation brace_">{</span><span class="hljs-variable">folder</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable">folder</span><span class="hljs-punctuation brace_">}</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-title function_"><span class="hljs-built_in stdLib_ File_Utilities__">visit_files</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">tprint</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>src/<span class="hljs-subst">%</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">folder</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable"><span class="hljs-literal bool_ false__">false</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator math_">*</span><span class="hljs-variable">data</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-params declaration_">info</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-operator pointerTo_">*</span><span class="hljs-type stdLib_ File_Utilities__">File_Visit_Info</span></span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">data</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_"><span class="hljs-operator pointerTo_">*</span>Visit_Data</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable declaration_">ext</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_">ok</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ String__">path_extension</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">info</span><span class="hljs-property">.short_name</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable"><span class="hljs-keyword if_">if</span></span> <span class="hljs-operator logical_">!</span><span class="hljs-variable">ok</span> <span class="hljs-operator logical_">||</span> <span class="hljs-variable">ext</span> <span class="hljs-operator comparison_">!=</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>md<span class="hljs-punctuation quote_">&quot;</span></span> <span class="hljs-variable"><span class="hljs-keyword if_">then</span></span> <span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span><span class="hljs-punctuation semicolon_">;</span>
 
-		log(&quot;Parsing %&quot;, info.short_name);
-		markdown_file_contents := read_entire_file(info.full_name);
-		node := Markdown.parse(markdown_file_contents);
-		entry := parse_frontmatter(T, node.content, info.short_name);
-		entry.html = Markdown.emit_html(node);
-		make_directory_if_it_does_not_exist(tprint(&quot;%1%2/%3&quot;, BUILD_DIR, data.folder, entry.slug));
-		array_add(*data.entries, entry);
-	});
+		<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Math__">log</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>Parsing %<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">info</span><span class="hljs-property">.short_name</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable declaration_">markdown_file_contents</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ File__">read_entire_file</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">info</span><span class="hljs-property">.full_name</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable declaration_">node</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-type">Markdown</span><span class="hljs-property">.parse</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">markdown_file_contents</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-variable declaration_">entry</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_">parse_frontmatter</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable constant_">T</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">node</span><span class="hljs-property">.content</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">info</span><span class="hljs-property">.short_name</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-title function_"><span class="hljs-built_in stdLib_ File__">make_directory_if_it_does_not_exist</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">tprint</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-subst">%1</span><span class="hljs-subst">%2</span>/<span class="hljs-subst">%3</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable constant_">BUILD_DIR</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">data</span><span class="hljs-property">.folder</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">entry</span><span class="hljs-property">.slug</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">array_add</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">data</span><span class="hljs-property">.entries</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">entry</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+		<span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">array_add</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">data</span><span class="hljs-property">.documents</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">node</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
 
-	return quick_sort(data.entries, (a: T, b: T) -&gt; int {
-		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
-	});
-}</code></pre><h2>Conclusion</h2><p>If you are reading this, it means that it worked!
+	<span class="hljs-comment line_">// Highlight all the code blocks at once (more on this below)</span>
+	<span class="hljs-title function_">highlight_code_blocks</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">data</span><span class="hljs-property">.documents</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-keyword for_"><span class="hljs-keyword for_">for</span> <span class="hljs-punctuation forModifier_">*</span> <span class="hljs-variable">data</span><span class="hljs-property">.entries</span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span><span class="hljs-property">.html</span> <span class="hljs-operator assign_">=</span> <span class="hljs-type">Markdown</span><span class="hljs-property">.emit_html</span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">data</span><span class="hljs-property">.documents</span><span class="hljs-punctuation bracket_">[</span><span class="hljs-variable"><span class="hljs-variable language_">it_index</span></span><span class="hljs-punctuation bracket_">]</span><span class="hljs-punctuation paren_">)</span></span><span class="hljs-punctuation semicolon_">;</span>
+
+	<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Xar__">quick_sort</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">data</span><span class="hljs-property">.entries</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-type function_ declaration__"><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-params"><span class="hljs-params declaration_">a</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_">T</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-params"><span class="hljs-params declaration_">b</span><span class="hljs-operator define_">:</span> <span class="hljs-type params_">T</span></span><span class="hljs-punctuation paren_">)</span></span></span> <span class="hljs-operator returns_">-&gt;</span> <span class="hljs-params returns_"><span class="hljs-params return_"><span class="hljs-params return_ declaration__"><span class="hljs-type integer_ signed__">int</span></span></span></span> <span class="hljs-punctuation brace_">{</span>
+		<span class="hljs-variable"><span class="hljs-keyword flowCtrl_">return</span></span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">compare_apollo_times</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">calendar_to_apollo</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">b</span><span class="hljs-property">.pub_date_time</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Basic__">calendar_to_apollo</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable">a</span><span class="hljs-property">.pub_date_time</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-punctuation brace_">}</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span></code></pre><h2>Code highlighting</h2><p>At first, I highlighted the code blocks in the browser using <a href="https://highlightjs.org/">highlight.js</a>, with a <a href="https://www.npmjs.com/package/highlightjs-jai">Jai grammar</a> for the snippets of this post.
+The problem is that this grammar contains the names of the whole Jai standard library (about 40000 of them!), and highlight.js compiles all of them before highlighting anything.
+This froze this page for a few seconds every time it was loaded.</p><p>Since the generator already does everything at compile time, I decided to also do the highlighting there.
+Jai can&#39;t run JavaScript, but it can run other programs with the <code>Process</code> module, so the generator calls a small script with <a href="https://bun.sh/">Bun</a> that runs highlight.js on all the code blocks at once.
+The code blocks are passed through a file, each one prefixed with its size in bytes, so that the content of the code doesn&#39;t matter:</p><pre><code class="hljs language-jai"><span class="hljs-comment line_">// Each block is written as &quot;&lt;language&gt;\n&lt;code byte count&gt;\n&lt;code&gt;&quot;</span>
+<span class="hljs-variable declaration_">input</span><span class="hljs-operator define_">:</span> <span class="hljs-type"><span class="hljs-type stdLib_ Basic__">String_Builder</span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-keyword for_"><span class="hljs-keyword for_">for</span> <span class="hljs-variable">code_blocks</span> </span><span class="hljs-punctuation brace_">{</span>
+	<span class="hljs-variable declaration_">code</span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-variable"><span class="hljs-keyword if_">ifx</span></span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span><span class="hljs-property">.first_child</span> <span class="hljs-variable"><span class="hljs-keyword if_">then</span></span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span><span class="hljs-property">.first_child</span><span class="hljs-property">.content</span> <span class="hljs-variable"><span class="hljs-keyword if_">else</span></span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation semicolon_">;</span>
+	<span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">print_to_builder</span><span class="hljs-_BalancedParens"><span class="hljs-punctuation paren_">(</span><span class="hljs-operator math_">*</span><span class="hljs-variable">input</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span><span class="hljs-subst">%</span><span class="hljs-char escape_">\n</span><span class="hljs-subst">%</span><span class="hljs-char escape_">\n</span><span class="hljs-subst">%</span><span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable"><span class="hljs-variable language_">it</span></span><span class="hljs-property">.content</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">code</span><span class="hljs-property">.count</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">code</span><span class="hljs-punctuation paren_">)</span></span></span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-punctuation brace_">}</span>
+<span class="hljs-title function_"><span class="hljs-built_in stdLib_ File__">make_directory_if_it_does_not_exist</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>.build<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+<span class="hljs-title function_"><span class="hljs-built_in stdLib_ File__">write_entire_file</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-variable constant_">HIGHLIGHT_INPUT</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-operator math_">*</span><span class="hljs-variable">input</span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span>
+
+<span class="hljs-variable declaration_">result</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable declaration_"><span class="hljs-built_in stdLib_ Debug__">output</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-title function_ printLike__"><span class="hljs-title function_ printLike__">error</span></span> <span class="hljs-operator define_ assign__">:=</span> <span class="hljs-title function_"><span class="hljs-built_in stdLib_ Process__">run_command</span></span><span class="hljs-punctuation paren_">(</span><span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>bun<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-string"><span class="hljs-punctuation quote_">&quot;</span>tools/highlight/highlight.js<span class="hljs-punctuation quote_">&quot;</span></span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable constant_">HIGHLIGHT_INPUT</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable constant_">HIGHLIGHT_OUTPUT</span><span class="hljs-punctuation comma_">,</span> <span class="hljs-variable">capture_and_return_output</span> <span class="hljs-operator assign_">=</span> <span class="hljs-variable"><span class="hljs-literal bool_ true__">true</span></span><span class="hljs-punctuation paren_">)</span><span class="hljs-punctuation semicolon_">;</span></code></pre><p>The script writes back the highlighted HTML of each block in the same format, and each code block of the Markdown AST is replaced by an HTML block containing it.
+This means that the pages are served already highlighted, and don&#39;t need any JavaScript for that.
+The Bun script also only keeps the names of the standard library that are actually used in the code, which makes the Jai grammar compile in milliseconds instead of seconds.</p><h2>Conclusion</h2><p>If you are reading this, it means that it worked!
 Now since everything runs at compile time, meaning that it is &quot;interpreted&quot;, you might wonder how performant it is.
-Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~700ms.
+Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using <a href="https://www.nushell.sh/commands/docs/timeit.html">Nushell&#39;s timeit</a>) is ~850ms, including ~190ms for the code highlighting with Bun.
 Most of the time is spent parsing the Markdown, which I&#39;m sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
-I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p><strong>Update (September 2026):</strong> This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by <code>set_page_meta</code>, which also handles the description and the Open Graph tags.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
+I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.</p><p><strong>Update (September 2026):</strong> This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by <code>set_page_meta</code>, which also handles the description and the Open Graph tags.</p><p><strong>Update (October 2026):</strong> The code blocks are now highlighted at build time instead of in the browser, see <a href="#code-highlighting">Code highlighting</a>.</p><p>If you&#39;re curious, you can read the code of this website on <a href="https://github.com/St0wy/fabianhbr.ch">GitHub</a>.</p>
 		<hr />
 		
 			<p>Join the conversation by <a href="https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e">replying on Bluesky</a>.</p>
 			<bluesky-comments url="https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e"> </bluesky-comments>
+			<script type="module">
+				import "https://esm.sh/bluesky-comments-tag@0.0.3/load";
+			</script>
 		
 	</article>
 </main>
@@ -319,21 +345,7 @@ I hope I can find a satisfying solution for the global state / per page state pr
 <div id="lightbox" class="lightbox">
 	<img id="lightbox-img" src="" alt="Zoomed image" />
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/dos.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/powershell.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/glsl.min.js"></script>
-<script src="https://unpkg.com/highlightjs-zig@1.0.2/dist/zig.min.js"></script>
-<script type="text/javascript" src="https://unpkg.com/highlightjs-jai@1.1.0/dist/jai.min.js"></script>
-<script type="text/javascript" charset="UTF-8" src="/scripts/nushell.min.js"></script>
-<script type="module">
-	import "https://esm.sh/bluesky-comments-tag@0.0.3/load";
-</script>
 <script>
-	hljs.highlightAll();
-
 	const lightbox = document.getElementById('lightbox');
 	const lightboxImg = document.getElementById('lightbox-img');
 	const images = document.querySelectorAll('article img');

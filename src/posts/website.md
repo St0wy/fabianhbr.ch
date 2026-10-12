@@ -2,6 +2,7 @@
 title: Making my own custom site generator using Jai metaprogramming magic
 slug: custom-site-generator-jai
 pub_date_time: 2026-07-25
+updated_date_time: 2026-10-12
 tags: web, static-site-generator, jai
 description: Why use Jekyll, Hugo, Astro, or Node when you can reinvent the wheel and write a custom templating engine and Markdown parser in Jai?
 bluesky_url: https://bsky.app/profile/stowy.ch/post/3mrhpptquis2e
@@ -374,6 +375,7 @@ projects :: #run load_entries(Project, "projects");
 load_entries :: ($T: Type, folder: string) -> [] T {
 	Visit_Data :: struct {
 		entries: [..] T;
+		documents: [..] *Markdown.Ast_Node; // documents[i] is the parsed markdown of entries[i]
 		folder: string;
 	}
 
@@ -386,10 +388,14 @@ load_entries :: ($T: Type, folder: string) -> [] T {
 		markdown_file_contents := read_entire_file(info.full_name);
 		node := Markdown.parse(markdown_file_contents);
 		entry := parse_frontmatter(T, node.content, info.short_name);
-		entry.html = Markdown.emit_html(node);
 		make_directory_if_it_does_not_exist(tprint("%1%2/%3", BUILD_DIR, data.folder, entry.slug));
 		array_add(*data.entries, entry);
+		array_add(*data.documents, node);
 	});
+
+	// Highlight all the code blocks at once (more on this below)
+	highlight_code_blocks(data.documents);
+	for * data.entries it.html = Markdown.emit_html(data.documents[it_index]);
 
 	return quick_sort(data.entries, (a: T, b: T) -> int {
 		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
@@ -397,15 +403,44 @@ load_entries :: ($T: Type, folder: string) -> [] T {
 }
 ```
 
+## Code highlighting
+
+At first, I highlighted the code blocks in the browser using [highlight.js](https://highlightjs.org/), with a [Jai grammar](https://www.npmjs.com/package/highlightjs-jai) for the snippets of this post.
+The problem is that this grammar contains the names of the whole Jai standard library (about 40000 of them!), and highlight.js compiles all of them before highlighting anything.
+This froze this page for a few seconds every time it was loaded.
+
+Since the generator already does everything at compile time, I decided to also do the highlighting there.
+Jai can't run JavaScript, but it can run other programs with the `Process` module, so the generator calls a small script with [Bun](https://bun.sh/) that runs highlight.js on all the code blocks at once.
+The code blocks are passed through a file, each one prefixed with its size in bytes, so that the content of the code doesn't matter:
+
+```jai
+// Each block is written as "<language>\n<code byte count>\n<code>"
+input: String_Builder;
+for code_blocks {
+	code := ifx it.first_child then it.first_child.content else "";
+	print_to_builder(*input, "%\n%\n%", it.content, code.count, code);
+}
+make_directory_if_it_does_not_exist(".build");
+write_entire_file(HIGHLIGHT_INPUT, *input);
+
+result, output, error := run_command("bun", "tools/highlight/highlight.js", HIGHLIGHT_INPUT, HIGHLIGHT_OUTPUT, capture_and_return_output = true);
+```
+
+The script writes back the highlighted HTML of each block in the same format, and each code block of the Markdown AST is replaced by an HTML block containing it.
+This means that the pages are served already highlighted, and don't need any JavaScript for that.
+The Bun script also only keeps the names of the standard library that are actually used in the code, which makes the Jai grammar compile in milliseconds instead of seconds.
+
 ## Conclusion
 
 If you are reading this, it means that it worked!
 Now since everything runs at compile time, meaning that it is "interpreted", you might wonder how performant it is.
-Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using [Nushell's timeit](https://www.nushell.sh/commands/docs/timeit.html)) is ~700ms.
+Well, on my AMD Ryzen 9 7900X3D, the entire execution of the program (measured using [Nushell's timeit](https://www.nushell.sh/commands/docs/timeit.html)) is ~850ms, including ~190ms for the code highlighting with Bun.
 Most of the time is spent parsing the Markdown, which I'm sure would be wayyy faster if compiled and optimized,
 but I think this is good enough for me and being able to write my HTML templates using Jai is fun enough to accept this tradeoff.
 I hope I can find a satisfying solution for the global state / per page state problem, but for now the current solution works.
 
 **Update (September 2026):** This post was updated to reflect some changes in the generator. The frontmatter is now parsed using the type info of the structs instead of one hand-written parser per struct, and the page title is now set by `set_page_meta`, which also handles the description and the Open Graph tags.
+
+**Update (October 2026):** The code blocks are now highlighted at build time instead of in the browser, see [Code highlighting](#code-highlighting).
 
 If you're curious, you can read the code of this website on [GitHub](https://github.com/St0wy/fabianhbr.ch).

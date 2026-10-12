@@ -1,7 +1,9 @@
 # fabianhbr.ch
 
 Repository containing the code of my portfolio / blog website.
-It requires the [Jai](https://github.com/Ivo-Balbaert/The_Way_to_Jai/blob/main/book/01A_What_is_Jai.md) compiler, which is currently in closed beta.
+It requires the [Jai](https://github.com/Ivo-Balbaert/The_Way_to_Jai/blob/main/book/01A_What_is_Jai.md) compiler, which is currently in closed beta,
+and [Bun](https://bun.sh/), which runs [highlight.js](https://highlightjs.org/) during the build so the code blocks are served already highlighted
+(see [`tools/highlight/`](tools/highlight/)).
 To regenerate the website, run
 
 ```
@@ -26,7 +28,7 @@ Since the CI can't run Jai, `public/` is committed: regenerate the website befor
 
 - The code is licensed under the [MIT license](LICENSE).
 - The writing (blog posts, project pages and the text of the website) is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). See [LICENSE-CONTENT](LICENSE-CONTENT).
-- `public/modern-normalize.css` and `public/scripts/nushell.min.js` are third-party files under their own licenses.
+- `public/modern-normalize.css` and the files in `tools/highlight/vendor/` are third-party files under their own licenses.
 
 ## AI disclosure
 
@@ -39,4 +41,5 @@ Later on, I used an LLM to review the code and help with the following changes:
 - Writing the alt texts of the images
 - Replacing the per-struct frontmatter parsers with a single reflection-based one
 - Fixing bugs in the Markdown parser
+- Highlighting the code blocks at build time instead of in the browser
 - Updating the "custom site generator" blog post to match the new code of the generator

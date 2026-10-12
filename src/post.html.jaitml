@@ -7,14 +7,20 @@ post := posts[POST_INDEX];
 	<article>
 		<header>
 			<h1><?jai echo("%", escape(post.title)); ?></h1>
-			<p class="date"><?jai echo("%-%-%", post.pub_date_time.year, post.pub_date_time.month_starting_at_0 + 1, post.pub_date_time.day_of_month_starting_at_0 + 1); ?></p>
+			<p class="date">
+				<time datetime="<?jai echo("%", format_date(post.pub_date_time)); ?>"><?jai echo("%", format_date(post.pub_date_time)); ?></time>
+				<?jai if is_date_set(post.updated_date_time) { ?>&middot; Updated on <time datetime="<?jai echo("%", format_date(post.updated_date_time)); ?>"><?jai echo("%", format_date(post.updated_date_time)); ?></time><?jai } ?>
+			</p>
 		</header>
 		<?jai echo("%", post.html); ?>
 		<hr />
 		<?jai if post.bluesky_url.count > 0 { ?>
 			<p>Join the conversation by <?jai echo("<a href=\"%\">", escape(post.bluesky_url)); ?>replying on Bluesky</a>.</p>
 			<?jai echo("<bluesky-comments url=\"%\"> </bluesky-comments>", escape(post.bluesky_url)); ?>
+			<script type="module">
+				import "https://esm.sh/bluesky-comments-tag@0.0.3/load";
+			</script>
 		<?jai } ?>
 	</article>
 </main>
-<?jai include("footer_post.jaitml"); ?>
+<?jai include("footer.jaitml"); ?>

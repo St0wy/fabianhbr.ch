@@ -5,6 +5,7 @@
 #import "String";
 #import "Program_Print";
 #import "Sort";
+#import "Process";
 
 Markdown :: #import "Markdown";
 
@@ -17,6 +18,7 @@ Post :: struct {
 	title: string;
 	slug: string;
 	pub_date_time: Calendar_Time;
+	updated_date_time: Calendar_Time; // Optional, only set when the post was revised after its publication
 	tags: [] string;
 	description: string;
 	bluesky_url: string;
@@ -45,6 +47,7 @@ projects :: #run load_entries(Project, "projects");
 load_entries :: ($T: Type, folder: string) -> [] T {
 	Visit_Data :: struct {
 		entries: [..] T;
+		documents: [..] *Markdown.Ast_Node; // documents[i] is the parsed markdown of entries[i]
 		folder: string;
 	}
 
@@ -57,14 +60,75 @@ load_entries :: ($T: Type, folder: string) -> [] T {
 		markdown_file_contents := read_entire_file(info.full_name);
 		node := Markdown.parse(markdown_file_contents);
 		entry := parse_frontmatter(T, node.content, info.short_name);
-		entry.html = Markdown.emit_html(node);
 		make_directory_if_it_does_not_exist(tprint("%1%2/%3", BUILD_DIR, data.folder, entry.slug));
 		array_add(*data.entries, entry);
+		array_add(*data.documents, node);
 	});
+
+	// Highlight all the code blocks at once, so Bun only has to start once
+	highlight_code_blocks(data.documents);
+	for * data.entries it.html = Markdown.emit_html(data.documents[it_index]);
 
 	return quick_sort(data.entries, (a: T, b: T) -> int {
 		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
 	});
+}
+
+HIGHLIGHT_INPUT  :: ".build/highlight_input.txt";
+HIGHLIGHT_OUTPUT :: ".build/highlight_output.txt";
+
+// Highlights the code blocks with highlight.js at build time, by running tools/highlight/highlight.js with Bun.
+// Each code block is replaced by an HTML block containing the highlighted code, so the pages don't need any JS for it.
+highlight_code_blocks :: (documents: [] *Markdown.Ast_Node) {
+	code_blocks: [..] *Markdown.Ast_Node;
+	for document: documents {
+		node := document.first_child;
+		while node {
+			if node.kind == .CodeBlock then array_add(*code_blocks, node);
+			node = node.next_sibling;
+		}
+	}
+	if code_blocks.count == 0 then return;
+
+	// Each block is written as "<language>\n<code byte count>\n<code>"
+	input: String_Builder;
+	for code_blocks {
+		code := ifx it.first_child then it.first_child.content else "";
+		print_to_builder(*input, "%\n%\n%", it.content, code.count, code);
+	}
+	make_directory_if_it_does_not_exist(".build");
+	write_entire_file(HIGHLIGHT_INPUT, *input);
+
+	result, output, error := run_command("bun", "tools/highlight/highlight.js", HIGHLIGHT_INPUT, HIGHLIGHT_OUTPUT, capture_and_return_output = true);
+	if result.type != .EXITED || result.exit_code != 0 {
+		log_error("Couldn't highlight the code blocks with Bun, they will be left as plain text (is Bun installed?)\n%", error);
+		return;
+	}
+
+	highlighted, ok := read_entire_file(HIGHLIGHT_OUTPUT);
+	if !ok {
+		log_error("Couldn't read the highlighted code blocks from %", HIGHLIGHT_OUTPUT);
+		return;
+	}
+
+	// The output contains "<html byte count>\n<html>" for each block, in the same order
+	for code_blocks {
+		newline := find_index_from_left(highlighted, #char "\n");
+		if newline < 0 {
+			log_error("The output of the highlighter is missing some code blocks");
+			return;
+		}
+		byte_count := to_integer(slice(highlighted, 0, newline));
+		advance(*highlighted, newline + 1);
+		html := slice(highlighted, 0, byte_count);
+		advance(*highlighted, byte_count);
+
+		language := ifx it.content.count > 0 then it.content else "plaintext";
+		it.kind = .HtmlBlock;
+		it.content = sprint("<pre><code class=\"hljs language-%\">%</code></pre>", escape(language), html);
+		it.first_child = null;
+		it.last_child = null;
+	}
 }
 
 SITE_NAME :: "Fabian Huber";
@@ -79,8 +143,19 @@ page_url := "";
 og_type := "";
 og_image := "";
 og_image_alt := "";
+og_published_time: Calendar_Time; // Only set for articles, see is_date_set
+og_modified_time: Calendar_Time;
 
-set_page_meta :: (page_title: string, path: string, page_description := "", type := "website", image := "", image_alt := "") {
+set_page_meta :: (
+	page_title: string,
+	path: string,
+	page_description := "",
+	type := "website",
+	image := "",
+	image_alt := "",
+	published_time := Calendar_Time.{},
+	modified_time := Calendar_Time.{}
+) {
 	og_title = page_title;
 	title = ifx page_title == SITE_NAME then SITE_NAME else tprint("% - %", page_title, SITE_NAME);
 	description = ifx page_description.count > 0 then page_description else DEFAULT_DESCRIPTION;
@@ -88,6 +163,8 @@ set_page_meta :: (page_title: string, path: string, page_description := "", type
 	og_type = type;
 	og_image = ifx image.count > 0 then tprint("%1%2", SITE_URL, image) else "";
 	og_image_alt = image_alt;
+	og_published_time = published_time;
+	og_modified_time = modified_time;
 }
 
 // Used by the templates to escape values before inserting them in the HTML
@@ -150,6 +227,17 @@ find_frontmatter_member :: (info: *Type_Info_Struct, key: string) -> *Type_Info_
 		return member;
 	}
 	return null;
+}
+
+// Formats a date as YYYY-MM-DD, used both for display and for the datetime attribute of <time>
+format_date :: (ct: Calendar_Time) -> string {
+	two_digits :: #bake_arguments formatInt(minimum_digits = 2);
+	return tprint("%-%-%", ct.year, two_digits(ct.month_starting_at_0 + 1), two_digits(ct.day_of_month_starting_at_0 + 1));
+}
+
+// A Calendar_Time that wasn't set in the frontmatter is zeroed
+is_date_set :: (ct: Calendar_Time) -> bool {
+	return ct.year != 0;
 }
 
 // RSS 2.0 requires dates in the RFC 822 format (e.g. "Sat, 25 Jul 2026 00:00:00 GMT")
@@ -271,7 +359,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for posts {
-			print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\");", it_index);
+			print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\", published_time = posts[%1].pub_date_time, modified_time = posts[%1].updated_date_time);", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/post.html.jaitml\", tprint(\"\%posts/%/index.html\", BUILD_DIR), #code { POST_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);
