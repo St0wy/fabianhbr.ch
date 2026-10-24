@@ -63,6 +63,7 @@ BLOGROLL :: string.[
 	"https://fgiesen.wordpress.com/",
 	"https://floooh.github.io/",
 	"https://momentsingraphics.de/index.html",
+	"https://rxi.github.io/",
 ];
 
 // Returns the domain name of a URL (e.g. "https://example.com/blog.html" -> "example.com")
