@@ -9,6 +9,7 @@ team_size: 1
 time_frame: 3 Months
 tools_used: C++ / OpenGL
 repo: https://github.com/St0wy/opengl-scene
+featured: true
 ---
 
 <iframe

@@ -9,6 +9,7 @@ team_size: 1
 time_frame: 1 month
 tools_used: Jai
 repo: https://codeberg.org/St0wy/tinyrenderer
+featured: true
 ---
 
 A CPU-based rasterizer built in Jai, following the [tinyrenderer](https://github.com/ssloy/tinyrenderer) guide by Dmitry V. Sokolov.

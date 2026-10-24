@@ -1,7 +1,7 @@
-<?jai if projects.count > 0 { ?>
+<?jai if listed_projects.count > 0 { ?>
 <h2>Projects</h2>
 <div class="project-grid">
-	<?jai for project: projects { ?>
+	<?jai for project: listed_projects { ?>
 	<a href="/projects/<?jai echo("%", escape(project.slug)); ?>" class="project-card">
 		<img src="<?jai echo("%", escape(project.hero_image)); ?>" alt="" />
 		<div class="project-info">

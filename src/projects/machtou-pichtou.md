@@ -9,6 +9,7 @@ team_size: 3
 time_frame: 48 hours
 tools_used: Custom C Engine
 itch: https://stowy.itch.io/machtou-pichtou-defenders-slip-and-slide
+featured: true
 ---
 
 <iframe

@@ -1,7 +1,7 @@
-<?jai if posts.count > 0 { ?>
+<?jai if listed_posts.count > 0 { ?>
 	<h2>Posts</h2>
 	<ul class="posts">
-	<?jai for post: posts { ?>
+	<?jai for post: listed_posts { ?>
 		<li>
 			<?jai echo("<a href=\"/posts/%\">%</a>", escape(post.slug), escape(post.title)); ?>
 			<?jai if post.description.count > 0 { ?><p class="description"><?jai echo("%", escape(post.description)); ?></p><?jai } ?>

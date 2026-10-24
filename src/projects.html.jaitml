@@ -1,5 +1,5 @@
 <?jai include("header.jaitml"); ?>
 <main>
-	<?jai include("projects_list.jaitml"); ?>
+	<?jai listed_projects = projects; include("projects_list.jaitml"); ?>
 </main>
 <?jai include("footer.jaitml"); ?>

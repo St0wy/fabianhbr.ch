@@ -38,10 +38,44 @@ Project :: struct {
 	html: string; @NoFrontmatter
 	repo: string;
 	itch: string;
+	featured: bool; // Featured projects are the ones shown on the index
 }
 
 posts :: #run load_entries(Post, "posts");
 projects :: #run load_entries(Project, "projects");
+featured_projects :: #run -> [] Project {
+	result: [..] Project;
+	for projects if it.featured then array_add(*result, it);
+	return result;
+};
+
+INDEX_POST_COUNT :: 4; // Number of recent posts shown on the index
+
+// Blogs shown at the bottom of the index, displayed by their domain name
+BLOGROLL :: string.[
+	"https://sebdegraff.com/blog.html",
+	"https://jakubtomsu.github.io/",
+	"https://aras-p.info/",
+	"https://zylinski.se/",
+	"https://zeux.io/",
+	"https://blog.voxagon.se/",
+	"https://www.gingerbill.org/",
+	"https://fgiesen.wordpress.com/",
+	"https://floooh.github.io/",
+	"https://momentsingraphics.de/index.html",
+];
+
+// Returns the domain name of a URL (e.g. "https://example.com/blog.html" -> "example.com")
+url_domain :: (url: string) -> string {
+	has_scheme, _, after_scheme := split_from_left(url, "://");
+	domain := ifx has_scheme then after_scheme else url;
+	_, domain = split_from_left(domain, #char "/");
+	return domain;
+}
+
+// Entries shown by projects_list.jaitml and posts_list.jaitml, set by the page including them
+listed_projects: [] Project;
+listed_posts: [] Post;
 
 // Parses every markdown file in src/<folder>, and returns them sorted from newest to oldest
 load_entries :: ($T: Type, folder: string) -> [] T {
@@ -199,6 +233,12 @@ parse_frontmatter :: ($T: Type, frontmatter: string, file_name: string) -> T {
 				(cast(*string) address).* = value;
 			case type_info(int);
 				(cast(*int) address).* = to_integer(value);
+			case type_info(bool);
+				if value != "true" && value != "false" {
+					log_error("%: invalid boolean, expected true or false (key: %, value: %)", file_name, key, value);
+					continue;
+				}
+				(cast(*bool) address).* = value == "true";
 			case type_info([] string);
 				(cast(*[] string) address).* = split(value, ", ");
 			case type_info(Calendar_Time);

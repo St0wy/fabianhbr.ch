@@ -43,3 +43,4 @@ Later on, I used an LLM to review the code and help with the following changes:
 - Fixing bugs in the Markdown parser
 - Highlighting the code blocks at build time instead of in the browser
 - Updating the "custom site generator" blog post to match the new code of the generator
+- Showing only the featured projects and the most recent posts on the index

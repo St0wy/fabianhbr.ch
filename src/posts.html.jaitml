@@ -1,5 +1,5 @@
 <?jai include("header.jaitml"); ?>
 <main>
-	<?jai include("posts_list.jaitml"); ?>
+	<?jai listed_posts = posts; include("posts_list.jaitml"); ?>
 </main>
 <?jai include("footer.jaitml"); ?>

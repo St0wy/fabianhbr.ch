@@ -9,6 +9,7 @@ team_size: 1
 time_frame: 7 Months
 tools_used: Jai / Vulkan
 repo: https://codeberg.org/St0wy/voxel-ray-tracer
+featured: true
 ---
 
 Final project of my studies at SAE Institute Geneva.
