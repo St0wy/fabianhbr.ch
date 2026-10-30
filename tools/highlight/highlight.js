@@ -17,6 +17,7 @@ const SCRIPTS = [
 	"nushell.min.js",
 	"powershell.min.js",
 	"zig.min.js",
+	"typst.bundle.js", // From @myriaddreamin/highlighter-typst, it uses the parser of Typst compiled to WASM
 ];
 
 globalThis.window = globalThis; // Some grammars expect to run in a browser
@@ -25,6 +26,10 @@ for (const script of SCRIPTS) {
 	(0, eval)(readFileSync(join(import.meta.dir, "vendor", script), "utf8"));
 }
 const hljs = globalThis.hljs;
+
+// The Typst grammar can only be registered once its WASM module is loaded
+await globalThis.$typst$parserModule;
+hljs.registerLanguage("typst", globalThis.hljsTypst());
 
 const [inputPath, outputPath] = process.argv.slice(2);
 const blocks = readBlocks(readFileSync(inputPath));

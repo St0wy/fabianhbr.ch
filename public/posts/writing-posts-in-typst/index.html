@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Writing blog posts in Typst - Fabian Huber</title>
+		<meta name="description" content="My site generator can now compile posts written in Typst, which gives me real equations and scripting inside my posts."/>
+		<meta property="og:site_name" content="Fabian Huber"/>
+		<meta property="og:title" content="Writing blog posts in Typst"/>
+		<meta property="og:description" content="My site generator can now compile posts written in Typst, which gives me real equations and scripting inside my posts."/>
+		<meta property="og:type" content="article"/>
+		<meta property="og:url" content="https://fabianhbr.ch/posts/writing-posts-in-typst/"/>
+		
+		<meta property="article:published_time" content="2026-10-30"/>
+		
+		<meta name="viewport" content="width=device-width" />
+		<link rel="stylesheet" href="/modern-normalize.css" />
+		<link rel="stylesheet" href="/index.css" />
+		<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="/rss.xml"/><style>/* Alignment */
+mtable.right-align mtd,
+mtable mtd.right-align,
+mtable.left-align mtd.right-align,
+mtable.aligned mtd:nth-child(odd) {
+  justify-items: end;
+  text-align: right;
+}
+mtable.cases mtd,
+mtable.left-align mtd,
+mtable mtd.left-align,
+mtable.aligned mtd:nth-child(even),
+math:is(:not([display])) > mtable.multiline-equation mtd {
+  justify-items: start;
+  text-align: left;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.left-flush {
+  padding-left: 0;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.right-flush {
+  padding-right: 0;
+}
+
+/* Tables */
+mtable {
+  math-style: inherit;
+}
+mtd {
+  math-depth: auto-add;
+  math-style: compact;
+  math-shift: compact;
+}
+
+/* Equations */
+mtable.multiline-equation mtd {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+  padding: 0;
+}
+math > mtable.multiline-equation mtr:not(:last-child) mtd {
+  padding-bottom: 0.5em;
+}
+
+/* Fractions */
+mfrac {
+  padding-inline: 0;
+  margin-inline: 0.1em;
+}
+
+/* Accents */
+mover[accent="true" i] > :first-child {
+  font-feature-settings: "dtls";
+}
+mover.dotted[accent="true" i] > :first-child {
+  font-feature-settings: "dtls" 0;
+}
+
+/* Other rules for scriptlevel, displaystyle and math-shift */
+munder > :nth-child(2),
+munderover > :nth-child(2) {
+  math-shift: compact
+}
+munder[accentunder="true" i] > :not(:first-child),
+mover[accent="true" i] > :not(:first-child) {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+}</style>	</head>
+	<body>
+		<header>
+			<nav>
+				<h1 id="title"><a href="/">Fabian Huber</a></h1>
+				<ul class="menu">
+					<li><a href="/">Home</a></li>
+					<li><a href="/projects">Projects</a></li>
+					<li><a href="/posts">Posts</a></li>
+					<li><a href="/about">About</a></li>
+					<li><a href="/subscribe">Subscribe</a></li>
+				</ul>
+			</nav>
+		</header>
+
+
+<main>
+	<article>
+		<header>
+			<h1>Writing blog posts in Typst</h1>
+			<p class="date">
+				<time datetime="2026-10-30">2026-10-30</time>
+				
+			</p>
+		</header>
+		<p>My site generator started out with only my own Markdown parser. It’s great for writing prose, but as soon as a post needs an equation, Markdown falls apart. So the generator can now also build posts written in <a href="https://typst.app/">Typst</a>, a modern alternative to LaTeX. This post is itself a <code>.typ</code> file!</p><h2>How it works</h2><p>Typst can export HTML (it’s still experimental), so the generator calls the Typst compiler through the <code>Process</code> module, the same way it already calls Bun to highlight the code blocks. Each post is compiled through a small wrapper file that sets up a few show rules for the website, then includes the post:</p><pre><code class="hljs language-typst"><span class="hljs-keyword">#</span><span class="hljs-keyword">show</span> <span class="hljs-variable">raw</span><span class="hljs-operator">.</span><span class="hljs-title function_">where</span><span class="hljs-punctuation">(</span><span class="hljs-variable">block</span><span class="hljs-punctuation">:</span> <span class="hljs-literal">true</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">:</span> <span class="hljs-variable">it</span> <span class="hljs-operator">=&gt;</span> <span class="hljs-variable">html</span><span class="hljs-operator">.</span><span class="hljs-title function_">elem</span><span class="hljs-punctuation">(</span>
+  <span class="hljs-string">&quot;pre&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-variable">html</span><span class="hljs-operator">.</span><span class="hljs-title function_">elem</span><span class="hljs-punctuation">(</span><span class="hljs-string">&quot;code&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-variable">attrs</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">(</span><span class="hljs-variable">data-lang</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">if</span> <span class="hljs-variable">it</span><span class="hljs-operator">.</span><span class="hljs-variable">lang</span> <span class="hljs-operator">==</span> <span class="hljs-keyword">none</span> <span class="hljs-punctuation">{</span> <span class="hljs-string">&quot;&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-keyword">else</span> <span class="hljs-punctuation">{</span> <span class="hljs-variable">it</span><span class="hljs-operator">.</span><span class="hljs-variable">lang</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">,</span> <span class="hljs-variable">it</span><span class="hljs-operator">.</span><span class="hljs-variable">text</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">,</span>
+<span class="hljs-punctuation">)</span>
+
+<span class="hljs-keyword">#</span><span class="hljs-keyword">include</span> <span class="hljs-variable">sys</span><span class="hljs-operator">.</span><span class="hljs-variable">inputs</span><span class="hljs-operator">.</span><span class="hljs-variable">path</span></code></pre><p>The generator then takes the content of the <code>&lt;body></code>, and gives the code blocks to highlight.js, so they look exactly like the ones of the Markdown posts. The frontmatter is a block comment at the top of the file with the same <code>key: value</code> lines as the Markdown posts, so Typst simply ignores it. A post looks like this:</p><pre><code class="hljs language-typst"><span class="hljs-comment">/*
+title: Writing blog posts in Typst
+slug: writing-posts-in-typst
+pub_date_time: 2026-10-30
+*/</span>
+
+<span class="hljs-section">= Equations</span>
+
+Typst exports equations like <span class="hljs-punctuation">$</span><span class="hljs-formula">F</span><span class="hljs-formula">_</span><span class="hljs-formula">0</span><span class="hljs-formula"> </span><span class="hljs-formula">=</span><span class="hljs-formula"> </span><span class="hljs-formula">(</span><span class="hljs-formula">(</span><span class="hljs-formula">n</span><span class="hljs-formula">_</span><span class="hljs-formula">1</span><span class="hljs-formula"> </span><span class="hljs-formula">-</span><span class="hljs-formula"> </span><span class="hljs-formula">n</span><span class="hljs-formula">_</span><span class="hljs-formula">2</span><span class="hljs-formula">)</span><span class="hljs-formula"> </span><span class="hljs-formula">/</span><span class="hljs-formula"> </span><span class="hljs-formula">(</span><span class="hljs-formula">n</span><span class="hljs-formula">_</span><span class="hljs-formula">1</span><span class="hljs-formula"> </span><span class="hljs-formula">+</span><span class="hljs-formula"> </span><span class="hljs-formula">n</span><span class="hljs-formula">_</span><span class="hljs-formula">2</span><span class="hljs-formula">)</span><span class="hljs-formula">)</span><span class="hljs-formula">^</span><span class="hljs-formula">2</span><span class="hljs-punctuation">$</span> as MathML, which means:
+<span class="hljs-bullet">-</span> No JavaScript, the browser renders them natively
+<span class="hljs-bullet">-</span> They can be selected and copied like the <span class="hljs-code">`rest`</span> of the text
+
+See the <span class="hljs-title function_">#</span><span class="hljs-title function_">link</span><span class="hljs-punctuation">(</span><span class="hljs-string">&quot;https://typst.app/docs/&quot;</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">[</span>documentation<span class="hljs-punctuation">]</span></code></pre><h2>Equations</h2><p>The main reason to use Typst is the math. Typst exports equations as MathML<label id="loc-1" class="sidenote-number" tabindex="0"><sup>1</sup></label><span class="sidenote" tabindex="-1"><span class="sidenote-entry"><span class="sidenote-mark">1</span> MathML Core has been supported by all the major browsers since Chrome added it in 2023.</span></span>, so the browser renders them natively, without any JavaScript. Inline math like <math><msub><mi>𝑓</mi><mn>0</mn></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mrow><msub><mi>𝑛</mi><mn>1</mn></msub><mo lspace="0em" rspace="0em">−</mo><msub><mi>𝑛</mi><mn>2</mn></msub></mrow><mrow><msub><mi>𝑛</mi><mn>1</mn></msub><mo lspace="0em" rspace="0em">+</mo><msub><mi>𝑛</mi><mn>2</mn></msub></mrow></mfrac><mo>)</mo></mrow><mn>2</mn></msup></math> sits right inside the text, and block equations get their own line, like the rendering equation:</p><math display="block"><msub><mi>𝐿</mi><mi>𝑜</mi></msub><mrow><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msub><mi>𝜔</mi><mi>𝑜</mi></msub></mrow><mo>)</mo></mrow><mo>=</mo><msub><mi>𝐿</mi><mi>𝑒</mi></msub><mrow><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msub><mi>𝜔</mi><mi>𝑜</mi></msub></mrow><mo>)</mo></mrow><mo>+</mo><msub><mo form="prefix" lspace="0em">∫</mo><mi mathvariant="normal">Ω</mi></msub><msub><mi>𝑓</mi><mi>𝑟</mi></msub><mrow><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msub><mi>𝜔</mi><mi>𝑖</mi></msub><mo>,</mo><msub><mi>𝜔</mi><mi>𝑜</mi></msub></mrow><mo>)</mo></mrow><msub><mi>𝐿</mi><mi>𝑖</mi></msub><mrow><mo>(</mo><mrow><mi>𝑥</mi><mo>,</mo><msub><mi>𝜔</mi><mi>𝑖</mi></msub></mrow><mo>)</mo></mrow><mrow><mo>(</mo><mrow><msub><mi>𝜔</mi><mi>𝑖</mi></msub><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">⋅</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow><mspace width="0.1667em"/><mo form="prefix" lspace="0em" rspace="0em">d</mo><msub><mi>𝜔</mi><mi>𝑖</mi></msub></math><p>For example, here is Schlick’s approximation of the Fresnel term, which I used in my <a href="/posts/how-i-implemented-a-deferred-pbr-renderer-in-opengl/">PBR renderer</a>:</p><math display="block"><mi>𝐹</mi><mrow><mo>(</mo><mi>𝜃</mi><mo>)</mo></mrow><mo>=</mo><msub><mi>𝐹</mi><mn>0</mn></msub><mo>+</mo><mrow><mo>(</mo><mrow><mn>1</mn><mo>−</mo><msub><mi>𝐹</mi><mn>0</mn></msub></mrow><mo>)</mo></mrow><msup><mrow><mo>(</mo><mrow><mn>1</mn><mo>−</mo><mo form="prefix" lspace="0em" rspace="0.16666666666666666em">cos</mo><mi>𝜃</mi></mrow><mo>)</mo></mrow><mn>5</mn></msup></math><p>And here it is in GLSL:</p><pre><code class="hljs language-glsl"><span class="hljs-comment">// Schlick&#x27;s approximation, f0 is the reflectance at normal incidence</span>
+<span class="hljs-type">vec3</span> fresnelSchlick(<span class="hljs-type">float</span> cosTheta, <span class="hljs-type">vec3</span> f0)
+{
+    <span class="hljs-keyword">return</span> f0 + (<span class="hljs-number">1.0</span> - f0) * <span class="hljs-built_in">pow</span>(<span class="hljs-built_in">clamp</span>(<span class="hljs-number">1.0</span> - cosTheta, <span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>), <span class="hljs-number">5.0</span>);
+}</code></pre><h2>Scripting</h2><p>Typst is also a real programming language. The values in this table aren’t written by hand, they are computed when the post is compiled, with <math><msub><mi>𝐹</mi><mn>0</mn></msub><mo>=</mo><mn>0.04</mn></math> (the usual value for dielectrics):</p><table><thead><tr><th>Angle</th><th><math><mo lspace="0em" rspace="0.16666666666666666em">cos</mo><mi>𝜃</mi></math></th><th><math><mi>𝐹</mi><mrow><mo>(</mo><mi>𝜃</mi><mo>)</mo></mrow></math></th></tr></thead><tbody><tr><td>0°</td><td>1</td><td>0.04</td></tr><tr><td>30°</td><td>0.866</td><td>0.04</td></tr><tr><td>60°</td><td>0.5</td><td>0.07</td></tr><tr><td>75°</td><td>0.259</td><td>0.255</td></tr><tr><td>85°</td><td>0.087</td><td>0.648</td></tr><tr><td>90°</td><td>0</td><td>1</td></tr></tbody></table><p>This makes it easy to see that most of the reflection happens at grazing angles.</p><h2>Images</h2><p>Images are referenced from the root of the repository, so they also show up when previewing the post in a Typst editor. The generator links them instead of embedding them in the page:</p><p><img src="/assets/images/opengl-scene/final.png" alt="The final render of my OpenGL scene, with PBR materials and image based lighting"></p><p>Footnotes work too<label id="loc-2" class="sidenote-number" tabindex="0"><sup>2</sup></label><span class="sidenote" tabindex="-1"><span class="sidenote-entry"><span class="sidenote-mark">2</span> They are shown in the margin when the window is wide enough, otherwise clicking their number shows them below the line.</span></span>, so I don’t have any excuse anymore to not write the math heavy posts I keep putting off.</p>
+		<hr />
+		
+	</article>
+</main>
+<footer>© 2026 Fabian Huber · Written content licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="license">CC BY-NC-ND 4.0</a></footer>
+<div id="lightbox" class="lightbox">
+	<img id="lightbox-img" src="" alt="Zoomed image" />
+</div>
+<script>
+	const lightbox = document.getElementById('lightbox');
+	const lightboxImg = document.getElementById('lightbox-img');
+	const images = document.querySelectorAll('article img');
+
+	images.forEach(img => {
+		img.addEventListener('click', function() {
+			lightboxImg.src = this.src;
+			lightboxImg.alt = this.alt;
+			lightbox.style.display = 'block';
+		});
+	});
+
+	lightbox.addEventListener('click', function() {
+		lightbox.style.display = 'none';
+		lightboxImg.src = "";
+	});
+
+	(function addHeadingLinks(){
+		let article = document.querySelectorAll('article')[0];
+		if (!article) return;
+		let headings = article.querySelectorAll('h1, h2, h3');
+		let seenIds = new Set();
+		headings.forEach(function(heading){
+			if (!heading.id) {
+				let baseId = heading.textContent
+					.trim()
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/(^-|-$)/g, '');
+				if (!baseId) baseId = 'section';
+				let uniqueId = baseId;
+				let counter = 1;
+				while (seenIds.has(uniqueId) || document.getElementById(uniqueId)) {
+					uniqueId = baseId + '-' + counter;
+					counter++;
+				}
+
+				heading.id = uniqueId;
+			}
+
+			seenIds.add(heading.id);
+
+			let a = document.createElement('a');
+			a.innerHTML = heading.innerHTML;
+			a.href = '#'+heading.id;
+			heading.innerHTML = '';
+			heading.appendChild(a);
+		});
+	})();
+</script>
+</body>
+</html>
+

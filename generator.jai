@@ -23,6 +23,7 @@ Post :: struct {
 	description: string;
 	bluesky_url: string;
 	html: string; @NoFrontmatter
+	head_html: string; @NoFrontmatter // Elements added to the <head> of the page, used by the Typst pages
 }
 
 Project :: struct {
@@ -36,6 +37,7 @@ Project :: struct {
 	time_frame: string;
 	tools_used: string;
 	html: string; @NoFrontmatter
+	head_html: string; @NoFrontmatter // Elements added to the <head> of the page, used by the Typst pages
 	repo: string;
 	itch: string;
 	featured: bool; // Featured projects are the ones shown on the index
@@ -78,59 +80,201 @@ url_domain :: (url: string) -> string {
 listed_projects: [] Project;
 listed_posts: [] Post;
 
-// Parses every markdown file in src/<folder>, and returns them sorted from newest to oldest
+// Parses every Markdown and Typst file in src/<folder>, and returns them sorted from newest to oldest
 load_entries :: ($T: Type, folder: string) -> [] T {
 	Visit_Data :: struct {
 		entries: [..] T;
-		documents: [..] *Markdown.Ast_Node; // documents[i] is the parsed markdown of entries[i]
+		documents: [..] *Markdown.Ast_Node; // documents[i] is the parsed markdown of entries[i], or null if it was written in Typst
 		folder: string;
 	}
 
 	data := Visit_Data.{folder = folder};
 	visit_files(tprint("src/%", folder), false, *data, (info: *File_Visit_Info, data: *Visit_Data) {
 		ext, ok := path_extension(info.short_name);
-		if !ok || ext != "md" then return;
+		if !ok then return;
 
-		log("Parsing %", info.short_name);
-		markdown_file_contents := read_entire_file(info.full_name);
-		node := Markdown.parse(markdown_file_contents);
-		entry := parse_frontmatter(T, node.content, info.short_name);
+		entry: T;
+		node: *Markdown.Ast_Node;
+		if ext == {
+			case "md";
+				log("Parsing %", info.short_name);
+				markdown_file_contents := read_entire_file(info.full_name);
+				node = Markdown.parse(markdown_file_contents);
+				entry = parse_frontmatter(T, node.content, info.short_name);
+			case "typ";
+				log("Compiling %", info.short_name);
+				entry = load_typst_entry(T, info.full_name, info.short_name);
+			case;
+				return;
+		}
+
 		make_directory_if_it_does_not_exist(tprint("%1%2/%3", BUILD_DIR, data.folder, entry.slug));
 		array_add(*data.entries, entry);
 		array_add(*data.documents, node);
 	});
 
 	// Highlight all the code blocks at once, so Bun only has to start once
-	highlight_code_blocks(data.documents);
-	for * data.entries it.html = Markdown.emit_html(data.documents[it_index]);
+	code_blocks: [..] Highlighted_Block;
+	for data.documents if it then find_markdown_code_blocks(it, *code_blocks);
+	for data.entries if !data.documents[it_index] then find_typst_code_blocks(it.html, it_index, *code_blocks);
+	highlight_code_blocks(code_blocks);
+	for * data.entries {
+		document := data.documents[it_index];
+		if document then it.html = Markdown.emit_html(document);
+		else it.html = replace_typst_code_blocks(it.html, it_index, code_blocks);
+	}
 
 	return quick_sort(data.entries, (a: T, b: T) -> int {
 		return compare_apollo_times(calendar_to_apollo(b.pub_date_time), calendar_to_apollo(a.pub_date_time));
 	});
 }
 
+TYPST_PAGE :: "src/typst_page.typ";
+TYPST_ENDNOTES_START :: "<section role=\"doc-endnotes\">";
+
+// Compiles a Typst file to HTML with the Typst CLI, through TYPST_PAGE which applies the show rules of the website.
+// The frontmatter is the "key: value" lines of the /* */ comment at the start of the file.
+load_typst_entry :: ($T: Type, path: string, file_name: string) -> T {
+	contents := trim_left(read_entire_file(path));
+	frontmatter := "";
+	if starts_with(contents, "/*") {
+		frontmatter_end := find_index_from_left(contents, "*/");
+		if frontmatter_end >= 0 then frontmatter = slice(contents, 2, frontmatter_end - 2);
+	}
+	if frontmatter.count == 0 then log_error("%: the file doesn't start with a /* */ comment containing the frontmatter", file_name);
+	entry := parse_frontmatter(T, frontmatter, file_name);
+
+	result, output, error := run_command(
+		"typst", "compile", "--features", "html", "--format", "html", "--root", ".",
+		"--input", tprint("path=/%", path), TYPST_PAGE, "-",
+		capture_and_return_output = true
+	);
+	if result.type != .EXITED || result.exit_code != 0 {
+		log_error("%: couldn't compile the file with Typst (is Typst installed?)\n%", file_name, error);
+		return entry;
+	}
+
+	// Typst always warns that its HTML export is experimental, only show the output if there are other warnings
+	first_warning := find_index_from_left(error, "warning:");
+	if first_warning >= 0 && find_index_from_left(error, "warning:", first_warning + 1) >= 0 then log("%", error);
+
+	body_start := find_index_from_left(output, "<body>");
+	body_end := find_index_from_right(output, "</body>");
+	if body_start < 0 || body_end < body_start {
+		log_error("%: couldn't find the <body> in the output of Typst", file_name);
+		return entry;
+	}
+	body_start += "<body>".count;
+	entry.html = slice(output, body_start, body_end - body_start);
+
+	// The footnotes are shown as sidenotes by TYPST_PAGE, so remove the list of footnotes at the end of the page
+	endnotes_start := find_index_from_left(entry.html, TYPST_ENDNOTES_START);
+	if endnotes_start >= 0 {
+		endnotes_end := find_index_from_left(entry.html, "</section>", endnotes_start);
+		if endnotes_end >= 0 {
+			endnotes_end += "</section>".count;
+			entry.html = join(slice(entry.html, 0, endnotes_start), slice(entry.html, endnotes_end, entry.html.count - endnotes_end));
+		}
+	}
+
+	// Keep the styles of the <head>, Typst uses them for the MathML equations
+	head := slice(output, 0, body_start);
+	head_html: String_Builder;
+	while true {
+		style_start := find_index_from_left(head, "<style>");
+		if style_start < 0 then break;
+		style_end := find_index_from_left(head, "</style>", style_start);
+		if style_end < 0 then break;
+		style_end += "</style>".count;
+		append(*head_html, slice(head, style_start, style_end - style_start));
+		advance(*head, style_end);
+	}
+	entry.head_html = builder_to_string(*head_html);
+
+	return entry;
+}
+
+// A code block to highlight with highlight_code_blocks
+Highlighted_Block :: struct {
+	language: string;
+	code: string;
+	html: string; // Highlighted HTML, stays empty if the highlighting failed
+
+	markdown_node: *Markdown.Ast_Node; // Only set for the Markdown blocks, which are replaced in their node
+	typst_entry_index: int; // The Typst blocks are replaced in the html of their entry, at [typst_start, typst_end[
+	typst_start: int;
+	typst_end: int;
+}
+
+find_markdown_code_blocks :: (document: *Markdown.Ast_Node, code_blocks: *[..] Highlighted_Block) {
+	node := document.first_child;
+	while node {
+		if node.kind == .CodeBlock {
+			code := ifx node.first_child then node.first_child.content else "";
+			array_add(code_blocks, .{language = node.content, code = code, markdown_node = node});
+		}
+		node = node.next_sibling;
+	}
+}
+
+// Emitted by the show rule of TYPST_PAGE for the code blocks
+TYPST_CODE_BLOCK_START :: "<pre><code data-lang=\"";
+TYPST_CODE_BLOCK_END :: "</code></pre>";
+
+find_typst_code_blocks :: (html: string, entry_index: int, code_blocks: *[..] Highlighted_Block) {
+	start := find_index_from_left(html, TYPST_CODE_BLOCK_START);
+	while start >= 0 {
+		language_start := start + TYPST_CODE_BLOCK_START.count;
+		language_end := find_index_from_left(html, "\">", language_start);
+		end := find_index_from_left(html, TYPST_CODE_BLOCK_END, language_start);
+		if language_end < 0 || end < 0 then return;
+		code_start := language_end + 2;
+
+		block: Highlighted_Block;
+		block.language = slice(html, language_start, language_end - language_start);
+		block.code = unescape_html(slice(html, code_start, end - code_start));
+		block.typst_entry_index = entry_index;
+		block.typst_start = start;
+		block.typst_end = end + TYPST_CODE_BLOCK_END.count;
+		array_add(code_blocks, block);
+
+		start = find_index_from_left(html, TYPST_CODE_BLOCK_START, block.typst_end);
+	}
+}
+
+replace_typst_code_blocks :: (html: string, entry_index: int, code_blocks: [] Highlighted_Block) -> string {
+	result: String_Builder;
+	cursor := 0;
+	for code_blocks {
+		if it.markdown_node || it.typst_entry_index != entry_index || it.html.count == 0 then continue;
+		append(*result, slice(html, cursor, it.typst_start - cursor));
+		append(*result, it.html);
+		cursor = it.typst_end;
+	}
+	append(*result, slice(html, cursor, html.count - cursor));
+	return builder_to_string(*result);
+}
+
+// Typst escapes the text of the code blocks, but highlight.js needs the original code
+unescape_html :: (text: string) -> string {
+	result := replace(text, "&lt;", "<");
+	result = replace(result, "&gt;", ">");
+	result = replace(result, "&quot;", "\"");
+	result = replace(result, "&#39;", "'");
+	return replace(result, "&amp;", "&");
+}
+
 HIGHLIGHT_INPUT  :: ".build/highlight_input.txt";
 HIGHLIGHT_OUTPUT :: ".build/highlight_output.txt";
 
 // Highlights the code blocks with highlight.js at build time, by running tools/highlight/highlight.js with Bun.
-// Each code block is replaced by an HTML block containing the highlighted code, so the pages don't need any JS for it.
-highlight_code_blocks :: (documents: [] *Markdown.Ast_Node) {
-	code_blocks: [..] *Markdown.Ast_Node;
-	for document: documents {
-		node := document.first_child;
-		while node {
-			if node.kind == .CodeBlock then array_add(*code_blocks, node);
-			node = node.next_sibling;
-		}
-	}
+// Each Markdown code block is replaced by an HTML block containing the highlighted code, so the pages don't need any JS for it.
+highlight_code_blocks :: (code_blocks: [] Highlighted_Block) {
 	if code_blocks.count == 0 then return;
 
 	// Each block is written as "<language>\n<code byte count>\n<code>"
 	input: String_Builder;
-	for code_blocks {
-		code := ifx it.first_child then it.first_child.content else "";
-		print_to_builder(*input, "%\n%\n%", it.content, code.count, code);
-	}
+	for code_blocks print_to_builder(*input, "%\n%\n%", it.language, it.code.count, it.code);
 	make_directory_if_it_does_not_exist(".build");
 	write_entire_file(HIGHLIGHT_INPUT, *input);
 
@@ -147,7 +291,7 @@ highlight_code_blocks :: (documents: [] *Markdown.Ast_Node) {
 	}
 
 	// The output contains "<html byte count>\n<html>" for each block, in the same order
-	for code_blocks {
+	for * code_blocks {
 		newline := find_index_from_left(highlighted, #char "\n");
 		if newline < 0 {
 			log_error("The output of the highlighter is missing some code blocks");
@@ -158,11 +302,16 @@ highlight_code_blocks :: (documents: [] *Markdown.Ast_Node) {
 		html := slice(highlighted, 0, byte_count);
 		advance(*highlighted, byte_count);
 
-		language := ifx it.content.count > 0 then it.content else "plaintext";
-		it.kind = .HtmlBlock;
-		it.content = sprint("<pre><code class=\"hljs language-%\">%</code></pre>", escape(language), html);
-		it.first_child = null;
-		it.last_child = null;
+		language := ifx it.language.count > 0 then it.language else "plaintext";
+		it.html = sprint("<pre><code class=\"hljs language-%\">%</code></pre>", escape(language), html);
+
+		node := it.markdown_node;
+		if node {
+			node.kind = .HtmlBlock;
+			node.content = it.html;
+			node.first_child = null;
+			node.last_child = null;
+		}
 	}
 }
 
@@ -180,6 +329,7 @@ og_image := "";
 og_image_alt := "";
 og_published_time: Calendar_Time; // Only set for articles, see is_date_set
 og_modified_time: Calendar_Time;
+head_html := ""; // Inserted as is at the end of the <head>
 
 set_page_meta :: (
 	page_title: string,
@@ -189,7 +339,8 @@ set_page_meta :: (
 	image := "",
 	image_alt := "",
 	published_time := Calendar_Time.{},
-	modified_time := Calendar_Time.{}
+	modified_time := Calendar_Time.{},
+	page_head_html := ""
 ) {
 	og_title = page_title;
 	title = ifx page_title == SITE_NAME then SITE_NAME else tprint("% - %", page_title, SITE_NAME);
@@ -200,6 +351,7 @@ set_page_meta :: (
 	og_image_alt = image_alt;
 	og_published_time = published_time;
 	og_modified_time = modified_time;
+	head_html = page_head_html;
 }
 
 // Used by the templates to escape values before inserting them in the HTML
@@ -400,7 +552,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for posts {
-			print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\", published_time = posts[%1].pub_date_time, modified_time = posts[%1].updated_date_time);", it_index);
+			print_to_builder(*sb, "set_page_meta(posts[%1].title, tprint(\"/posts/\%/\", posts[%1].slug), posts[%1].description, \"article\", published_time = posts[%1].pub_date_time, modified_time = posts[%1].updated_date_time, page_head_html = posts[%1].head_html);", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/post.html.jaitml\", tprint(\"\%posts/%/index.html\", BUILD_DIR), #code { POST_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);
@@ -409,7 +561,7 @@ execute_jaitml :: ($path: string, output_path: string, $extra_code: Code = #code
 	#insert -> string {
 		sb: String_Builder;
 		for projects {
-			print_to_builder(*sb, "set_page_meta(projects[%1].title, tprint(\"/projects/\%/\", projects[%1].slug), projects[%1].description, image = projects[%1].hero_image, image_alt = projects[%1].hero_image_alt);", it_index);
+			print_to_builder(*sb, "set_page_meta(projects[%1].title, tprint(\"/projects/\%/\", projects[%1].slug), projects[%1].description, image = projects[%1].hero_image, image_alt = projects[%1].hero_image_alt, page_head_html = projects[%1].head_html);", it_index);
 			print_to_builder(*sb, "execute_jaitml(\"src/project.html.jaitml\", tprint(\"\%projects/%/index.html\", BUILD_DIR), #code { PROJECT_INDEX :: %; });", it.slug, it_index);
 		}
 		return builder_to_string(*sb);

@@ -240,6 +240,24 @@ pre code.hljs {
 	color: var(--code-muted);
 }
 
+/* Used by the Typst grammar */
+.hljs-formula {
+	color: var(--code-type);
+}
+
+.hljs-bullet {
+	color: var(--code-keyword);
+}
+
+.hljs-code {
+	color: var(--code-string);
+}
+
+.hljs-link {
+	color: var(--code-string);
+	text-decoration: underline;
+}
+
 .hljs-emphasis {
 	font-style: italic;
 }
@@ -426,6 +444,86 @@ blockquote cite::before {
 
 	blockquote cite {
 		color: #999;
+	}
+}
+
+/* Equations of the Typst posts, exported as MathML. The wide ones scroll instead of overflowing the page. */
+math[display="block"] {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 0.25em 0;
+}
+
+/* Sidenotes, made from the footnotes of the Typst posts (see src/typst_page.typ).
+   They are in the right margin when there is enough space, otherwise they are shown below their line when clicking their number. */
+.sidenote-number {
+	color: var(--main-color);
+	font-weight: 500;
+	cursor: pointer;
+	/* Bigger area to click on, without moving the text around it */
+	padding: 0.25em 0.3em;
+	margin: 0 -0.3em;
+}
+
+.sidenote-number:focus {
+	outline: none;
+}
+
+.sidenote-number:focus-visible {
+	outline: 1px dotted currentColor;
+}
+
+.sidenote {
+	display: none;
+	font-size: 1rem; /* Same as the text, so --max-width is computed like for the body */
+	text-indent: 0;
+}
+
+.sidenote:focus {
+	outline: none;
+}
+
+.sidenote-entry {
+	display: block;
+	font-size: 0.8rem;
+	line-height: 1.3;
+	text-align: left;
+}
+
+.sidenote-mark {
+	position: relative;
+	top: -0.4em;
+	margin-left: -0.75em;
+	font-size: 0.8em;
+	color: var(--main-color);
+}
+
+@media (max-width: 1549.98px) {
+	.sidenote-number:hover {
+		text-decoration: underline;
+	}
+
+	.sidenote-number:focus + .sidenote, .sidenote:focus-within {
+		display: block;
+		float: left;
+		clear: both;
+		width: 95%;
+		margin: 0.75rem 2.5%;
+	}
+}
+
+@media (min-width: 1550px) {
+	.sidenote {
+		--sidenote-width: min(20rem, calc((100vw - var(--max-width)) / 2 - 2rem));
+		display: block;
+		float: right;
+		clear: right;
+		width: var(--sidenote-width);
+		margin: 0 calc(-1 * var(--sidenote-width) - 2rem) 0.5rem 0;
+	}
+
+	.sidenote-number {
+		cursor: default;
 	}
 }
 
