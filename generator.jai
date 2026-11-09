@@ -354,6 +354,29 @@ set_page_meta :: (
 	head_html = page_head_html;
 }
 
+// Split so the address doesn't appear as is in the repository
+EMAIL_USER :: "fabian";
+EMAIL_DOMAIN :: "fabianhbr.ch";
+
+// Returns a mailto link that works normally in browsers, but is hard to read for the bots harvesting email addresses.
+// The href mixes HTML entities and URL encoding, and the text contains a fake part hidden with CSS (.email-decoy).
+// See https://spencermortensen.com/articles/email-obfuscation/ for how well these techniques work.
+email_link :: () -> string {
+	address := tprint("%@%", EMAIL_USER, EMAIL_DOMAIN);
+
+	href: String_Builder;
+	append(*href, "mailto:");
+	for address {
+		if it == #char "@" || it == #char "." then print_to_builder(*href, "\%%", formatInt(it, base = 16));
+		else if it_index % 2 == 0 then print_to_builder(*href, "&#%;", it);
+		else append(*href, it);
+	}
+
+	_, domain_name, top_level_domain := split_from_right(EMAIL_DOMAIN, #char ".");
+	return tprint("<a href=\"%1\">%2&#64;<span class=\"email-decoy\">nospam.</span>%3<!-- -->&#46;%4</a>",
+		builder_to_string(*href), EMAIL_USER, domain_name, top_level_domain);
+}
+
 // Used by the templates to escape values before inserting them in the HTML
 escape :: (text: string) -> string {
 	return Markdown.escape_for_html(text);

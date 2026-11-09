@@ -527,6 +527,11 @@ math[display="block"] {
 	}
 }
 
+/* Fake part of the email address, to trick the bots harvesting it (see email_link in generator.jai) */
+.email-decoy {
+	display: none;
+}
+
 .screenshots {
 	display: flex;
 	flex-wrap: wrap;
